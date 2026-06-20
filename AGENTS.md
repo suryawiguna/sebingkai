@@ -119,7 +119,13 @@ page clears everything. Do **not** reintroduce `localStorage` here.
   - `DemoGallery`: 3-col grid; tiles open a **yet-another-react-lightbox**
     instance (swipe to navigate + thumbnail strip; its CSS is imported in the
     component). Contributor filter tabs are wired but resolve to the same set
-    (one visitor in the demo).
+    (one visitor in the demo). Photos can be saved to the phone — one at a time
+    via the lightbox toolbar Download button, or all at once via "Simpan semua".
+  - **Saving** (`lib/save.ts` `savePhotos`): prefers the Web Share API
+    (`navigator.share({ files })`, which offers "Save to Photos" on iOS/Android),
+    falling back to file downloads. Data-URL → Blob conversion is **synchronous**
+    on purpose — never `await` before `navigator.share()` or Safari drops the
+    click's transient activation and the share is blocked.
 - **Limit:** `PHOTO_LIMIT` in `useDemoStore.ts` (currently **6**) is the single
   source of truth — counters and copy derive from it; don't hardcode the number.
 - **Captured photos use a plain `<img>`** (they're client data URLs), not
