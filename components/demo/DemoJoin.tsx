@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ArrowRight } from "lucide-react";
+import { PHOTO_LIMIT } from "./useDemoStore";
 
 type DemoJoinProps = {
   initialName: string;
@@ -44,7 +45,7 @@ export function DemoJoin({ initialName, onJoin }: DemoJoinProps) {
               <span className="size-1.5 rounded-full bg-accent" />6J TERSISA
             </span>
             <span>·</span>
-            <span>24 FOTO</span>
+            <span>{PHOTO_LIMIT} FOTO</span>
           </div>
           <input
             autoFocus
