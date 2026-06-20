@@ -24,6 +24,7 @@ There is still no backend; the demo is entirely client-side.
 - **Tailwind CSS v4** (CSS-first config via `@theme` in `app/globals.css` — there is **no `tailwind.config`**)
 - **lucide-react** for all icons
 - **qrcode** for the real (scannable) QR codes in the hero card and demo gate
+- **yet-another-react-lightbox** for the demo gallery's swipeable full-photo viewer
 - `next/font/google` (Fraunces / Inter / DM Mono) and `next/image` (Unsplash photos)
 - No ESLint, no test suite (yet)
 
@@ -66,11 +67,10 @@ components/
     DemoFlow.tsx        Orchestrator: device gate + join→camera→gallery state machine
     DemoJoin.tsx        Interactive guest welcome / name entry
     DemoCamera.tsx      getUserMedia viewfinder + native <input capture> fallback
-    DemoGallery.tsx     Filterable 3-col photo grid; tiles open the viewer
-    PhotoViewer.tsx     Full-screen photo view + thumbnail-strip navigation
+    DemoGallery.tsx     Filterable 3-col grid; tiles open the swipeable lightbox
     DesktopGate.tsx     "Buka di ponselmu" screen (with QR) for non-phones
     useDeviceGate.ts    matchMedia hook: portrait-phone detection
-    useDemoStore.ts     localStorage-backed {guestName, photos[]}; PHOTO_LIMIT = 6
+    useDemoStore.ts     In-memory {guestName, photos[]} (NOT persisted); PHOTO_LIMIT = 6
   Header.tsx        Client: sticky nav + mobile menu
   Hero.tsx          Hero + floating roll cards + QR card (desk) / "Coba demo" link (mobile)
   StatRow.tsx       Editorial stats band
@@ -92,7 +92,10 @@ KameraTamu → CaraKerja → Showcase → Pricing → Faq → ClosingCta.
 ## Demo flow (`/demo`)
 
 A real, **client-only** end-to-end demo so visitors can try the product. **No
-backend** — state lives in React + `localStorage` (`useDemoStore`), single device.
+backend.** State lives in React only (`useDemoStore`) — **in-memory, not
+persisted**: every visit/device starts fresh, so the gallery only shows photos
+taken in this session (never another user's data or a past cache). Reloading the
+page clears everything. Do **not** reintroduce `localStorage` here.
 
 - **Mockups vs. demo:** `components/screens.tsx` holds the static marketing
   mockups rendered inside `PhoneFrame`. `components/demo/*` holds the *actual
@@ -113,9 +116,10 @@ backend** — state lives in React + `localStorage` (`useDemoStore`), single dev
   - Captures run through `lib/film.ts` `captureFilmFrame()` — draws to a canvas
     with the `.film` filter baked in (`contrast(1.08) saturate(0.85)
     brightness(0.98)`), downscales, returns a JPEG data URL.
-  - `DemoGallery`: 3-col grid; tiles open `PhotoViewer` (full image + thumbnail
-    strip). Contributor filter tabs are wired but resolve to the same set (one
-    visitor in the demo).
+  - `DemoGallery`: 3-col grid; tiles open a **yet-another-react-lightbox**
+    instance (swipe to navigate + thumbnail strip; its CSS is imported in the
+    component). Contributor filter tabs are wired but resolve to the same set
+    (one visitor in the demo).
 - **Limit:** `PHOTO_LIMIT` in `useDemoStore.ts` (currently **6**) is the single
   source of truth — counters and copy derive from it; don't hardcode the number.
 - **Captured photos use a plain `<img>`** (they're client data URLs), not

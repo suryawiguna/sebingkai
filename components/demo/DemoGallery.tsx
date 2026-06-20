@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import { Camera, RotateCcw } from "lucide-react";
-import { PhotoViewer } from "./PhotoViewer";
+import Lightbox from "yet-another-react-lightbox";
+import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
+import "yet-another-react-lightbox/styles.css";
+import "yet-another-react-lightbox/plugins/thumbnails.css";
 
 type DemoGalleryProps = {
   guestName: string;
@@ -24,7 +27,7 @@ const tabPill = (active: boolean) =>
 export function DemoGallery({ guestName, photos, limit, onOpenCamera, onReset }: DemoGalleryProps) {
   const who = guestName || "Kamu";
   const [filter, setFilter] = useState<"all" | "me">("all");
-  const [viewer, setViewer] = useState<number | null>(null);
+  const [viewer, setViewer] = useState(-1);
   // Every demo capture belongs to the current visitor, so the contributor
   // filter narrows to the same set — the tab toggle is fully wired regardless.
   const visible = filter === "all" ? photos : photos;
@@ -93,14 +96,17 @@ export function DemoGallery({ guestName, photos, limit, onOpenCamera, onReset }:
         </button>
       </div>
 
-      {viewer !== null && visible[viewer] && (
-        <PhotoViewer
-          photos={visible}
-          index={viewer}
-          onIndexChange={setViewer}
-          onClose={() => setViewer(null)}
-        />
-      )}
+      <Lightbox
+        open={viewer >= 0}
+        index={viewer}
+        close={() => setViewer(-1)}
+        slides={visible.map((src) => ({ src }))}
+        plugins={[Thumbnails]}
+        carousel={{ finite: true }}
+        controller={{ closeOnBackdropClick: true }}
+        thumbnails={{ width: 56, height: 56, border: 0, gap: 8, padding: 0 }}
+        styles={{ container: { backgroundColor: "rgba(0,0,0,0.94)" } }}
+      />
     </div>
   );
 }
