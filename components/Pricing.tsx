@@ -8,19 +8,42 @@ import { Eyebrow } from "./ui";
 import { Reveal } from "./Reveal";
 import { ScreenAlbum } from "./screens";
 
-const tiers = [
+type Tier = {
+  id: string;
+  name: string;
+  price: string;
+  was?: string;
+  unit: string;
+  guests: string;
+  popular?: boolean;
+};
+
+const tiers: Tier[] = [
   { id: "coba", name: "Coba", price: "Rp0", unit: "selamanya", guests: "Hingga 5 tamu" },
   { id: "kecil", name: "Kecil", price: "Rp49rb", unit: "sekali bayar", guests: "Hingga 30 tamu" },
   {
     id: "standar",
     name: "Standar",
     price: "Rp99rb",
+    was: "Rp199rb",
     unit: "sekali bayar",
     guests: "Hingga 100 tamu",
     popular: true,
   },
-  { id: "besar", name: "Besar", price: "Rp199rb", unit: "sekali bayar", guests: "Tamu tak terbatas" },
+  {
+    id: "besar",
+    name: "Besar",
+    price: "Rp199rb",
+    was: "Rp299rb",
+    unit: "sekali bayar",
+    guests: "Tamu tak terbatas",
+  },
 ];
+
+// "Rp199rb" -> 199; used to derive the discount percentage.
+const priceValue = (s: string) => parseInt(s.replace(/[^0-9]/g, ""), 10) || 0;
+const discountPct = (was: string, price: string) =>
+  Math.round((1 - priceValue(price) / priceValue(was)) * 100);
 
 const features = [
   "Preset film custom",
@@ -98,6 +121,16 @@ export function Pricing() {
                         </span>
                       </span>
                       <span className="shrink-0 text-right">
+                        {t.was && (
+                          <span className="mb-0.5 flex items-center justify-end gap-1.5">
+                            <span className="font-body text-[13px] text-muted line-through">
+                              {t.was}
+                            </span>
+                            <span className="rounded-full bg-accent px-1.5 py-0.5 font-mono text-[10px] font-medium text-white">
+                              -{discountPct(t.was, t.price)}%
+                            </span>
+                          </span>
+                        )}
                         <span className="block font-display text-[20px] font-semibold tracking-[-0.02em] text-ink">
                           {t.price}
                         </span>

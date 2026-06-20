@@ -72,6 +72,13 @@ img {
   user-select: none;
 }
 
+/* Tailwind v4 Preflight no longer sets this — restore the hand cursor on
+ * every interactive button. */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]) {
+  cursor: pointer;
+}
+
 /* Cool, crisp film treatment */
 .film {
   filter: contrast(1.08) saturate(0.85) brightness(0.98);
