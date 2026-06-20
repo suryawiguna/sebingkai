@@ -41,7 +41,7 @@ export function SiteHeader() {
         </nav>
         <div className="hidden items-center gap-3.5 desk:flex">
           <Button variant="primary" size="sm">
-            Buat album
+            Mulai gratis
           </Button>
         </div>
 
@@ -55,7 +55,11 @@ export function SiteHeader() {
             onClick={() => setOpen((v) => !v)}
             className="flex size-[38px] items-center justify-center rounded-[10px] border border-border bg-transparent"
           >
-            {open ? <X size={18} className="text-ink" /> : <Menu size={18} className="text-ink" />}
+            {open ? (
+              <X size={18} className="text-ink" />
+            ) : (
+              <Menu size={18} className="text-ink" />
+            )}
           </button>
         </div>
       </Shell>
@@ -65,7 +69,9 @@ export function SiteHeader() {
         className="overflow-hidden bg-base transition-[max-height] duration-[280ms] ease-in-out desk:hidden"
         style={{
           maxHeight: open ? 300 : 0,
-          borderTop: open ? "1px solid var(--color-border)" : "1px solid transparent",
+          borderTop: open
+            ? "1px solid var(--color-border)"
+            : "1px solid transparent",
         }}
       >
         <Shell style={{ padding: open ? "10px 22px 18px" : "0 22px" }}>
@@ -80,7 +86,10 @@ export function SiteHeader() {
                 {l.label}
               </a>
             ))}
-            <a href="#" className="px-0.5 py-[13px] font-body text-[15px] text-muted no-underline">
+            <a
+              href="#"
+              className="px-0.5 py-[13px] font-body text-[15px] text-muted no-underline"
+            >
               Masuk
             </a>
           </nav>
