@@ -12,8 +12,10 @@ visual theme: pure-dark surfaces, near-white ink, and a single recording-red
 accent (`#FF2D2D`) reserved for the shutter and primary CTAs.
 
 This started as a static React + Babel single file and was rebuilt as a Next.js
-app. It is a single-page site — there is no backend, no routing beyond `/`, and
-the CTA buttons are intentionally non-functional placeholders.
+app. The marketing CTA buttons ("Mulai gratis") are intentionally
+non-functional placeholders — **except** the demo entry points, which lead to a
+real, working, client-only product demo at **`/demo`** (see "Demo flow" below).
+There is still no backend; the demo is entirely client-side.
 
 ## Tech stack
 
@@ -21,6 +23,7 @@ the CTA buttons are intentionally non-functional placeholders.
 - **TypeScript** (strict)
 - **Tailwind CSS v4** (CSS-first config via `@theme` in `app/globals.css` — there is **no `tailwind.config`**)
 - **lucide-react** for all icons
+- **qrcode** for the real (scannable) QR codes in the hero card and demo gate
 - `next/font/google` (Fraunces / Inter / DM Mono) and `next/image` (Unsplash photos)
 - No ESLint, no test suite (yet)
 
@@ -42,6 +45,9 @@ app/
   layout.tsx        Root layout: loads the 3 Google fonts, sets <html lang="id">, metadata
   page.tsx          Composes the sections in order (server component)
   globals.css       Tailwind import + @theme design tokens + base/reveal CSS
+  demo/
+    layout.tsx      Demo wrapper: noindex metadata + viewport (viewportFit: cover)
+    page.tsx        Renders <DemoFlow/>
 components/
   ds/               Design-system primitives (ported from the original Sebingkai DS)
     Logo.tsx        Wordmark + recording-red dot mark
@@ -50,12 +56,23 @@ components/
     PhoneFrame.tsx  Pure-CSS iPhone mockup (see "Phone scaling" below)
   ui.tsx            Shell (max-width container) + Eyebrow (mono uppercase label)
   FilmImg.tsx       next/image wrapper with the .film filter; fills its parent
+  QrCode.tsx        Client: renders a real scannable QR to <canvas> via qrcode
+  HeroQrCard.tsx    Client: hero "Coba sekarang" scan card (encodes origin + /demo)
   Reveal.tsx        Client: IntersectionObserver scroll-reveal wrapper
   RollCard.tsx      Floating "album" card with contributor avatars
   ClockText.tsx     Client: live countdown timecode for the camera screen
-  screens.tsx       The 6 phone-screen mockups (Album, Join, Camera, Naming, QR, Reveal)
+  screens.tsx       The 6 phone-screen MOCKUPS (Album, Join, Camera, Naming, QR, Reveal)
+  demo/             The REAL working demo (all client components) — see "Demo flow"
+    DemoFlow.tsx        Orchestrator: device gate + join→camera→gallery state machine
+    DemoJoin.tsx        Interactive guest welcome / name entry
+    DemoCamera.tsx      getUserMedia viewfinder + native <input capture> fallback
+    DemoGallery.tsx     Filterable 3-col photo grid; tiles open the viewer
+    PhotoViewer.tsx     Full-screen photo view + thumbnail-strip navigation
+    DesktopGate.tsx     "Buka di ponselmu" screen (with QR) for non-phones
+    useDeviceGate.ts    matchMedia hook: portrait-phone detection
+    useDemoStore.ts     localStorage-backed {guestName, photos[]}; PHOTO_LIMIT = 6
   Header.tsx        Client: sticky nav + mobile menu
-  Hero.tsx          Hero + floating roll cards
+  Hero.tsx          Hero + floating roll cards + QR card (desk) / "Coba demo" link (mobile)
   StatRow.tsx       Editorial stats band
   KameraTamu.tsx    "Guest camera" feature section
   CaraKerja.tsx     "How it works" 3-step section
@@ -65,11 +82,45 @@ components/
   Closing.tsx       Closing CTA (filmstrip) + footer
 lib/
   images.ts         UNSPLASH id map + ev(key, w) URL helper
+  film.ts           captureFilmFrame() / fileToImage() — bake the .film look into captures
 next.config.ts      images.remotePatterns allows images.unsplash.com
 ```
 
 Section render order lives in `app/page.tsx`: Header → Hero → StatRow →
 KameraTamu → CaraKerja → Showcase → Pricing → Faq → ClosingCta.
+
+## Demo flow (`/demo`)
+
+A real, **client-only** end-to-end demo so visitors can try the product. **No
+backend** — state lives in React + `localStorage` (`useDemoStore`), single device.
+
+- **Mockups vs. demo:** `components/screens.tsx` holds the static marketing
+  mockups rendered inside `PhoneFrame`. `components/demo/*` holds the *actual
+  interactive* screens — they share the visual language but are separate code.
+  Don't confuse the two; changing a mockup does not change the demo (and vice versa).
+- **Entry points** (in `Hero.tsx`): a real QR card on desktop (`HeroQrCard`,
+  encodes `${window.location.origin}/demo`) and a "Coba demo" link on mobile.
+- **Phone-only:** `useDeviceGate` (matchMedia: `pointer:coarse` + `max-width:640px`
+  + portrait) gates the flow. Anything else gets `DesktopGate` ("open on your
+  phone" + the same scannable QR). The gate returns `"checking"` until mounted to
+  avoid a hydration flash — keep that SSR-safe pattern for any new client gates.
+- **Flow:** `DemoFlow` is the state machine `join → camera → gallery`.
+  - `DemoCamera`: live `getUserMedia({ facingMode: 'environment' })` viewfinder;
+    on failure/denied/unsupported it **auto-falls back** to a native
+    `<input type="file" capture>`. Shutter is **white** (it shoots photos, not
+    video — do not use the red accent here). The thumbnail beside the shutter is
+    the stacked latest-shot preview.
+  - Captures run through `lib/film.ts` `captureFilmFrame()` — draws to a canvas
+    with the `.film` filter baked in (`contrast(1.08) saturate(0.85)
+    brightness(0.98)`), downscales, returns a JPEG data URL.
+  - `DemoGallery`: 3-col grid; tiles open `PhotoViewer` (full image + thumbnail
+    strip). Contributor filter tabs are wired but resolve to the same set (one
+    visitor in the demo).
+- **Limit:** `PHOTO_LIMIT` in `useDemoStore.ts` (currently **6**) is the single
+  source of truth — counters and copy derive from it; don't hardcode the number.
+- **Captured photos use a plain `<img>`** (they're client data URLs), not
+  `FilmImg`/`next/image`. The `.film` look is already baked in at capture time, so
+  don't re-apply the `.film` class to them.
 
 ## Conventions
 
@@ -116,8 +167,10 @@ This is how phones resize across breakpoints without any JavaScript.
 Default to **server components**. Add `"use client"` only for genuine
 interactivity/effects. Current client components: `Header` (menu toggle),
 `Showcase` (tabs), `Pricing` (tier selection), `Faq` (accordion),
-`Reveal` (IntersectionObserver), `ClockText` (interval). Everything else,
-including all six phone screens, is a server component.
+`Reveal` (IntersectionObserver), `ClockText` (interval), and **everything under
+`components/demo/` plus `QrCode`/`HeroQrCard`** (camera, storage, matchMedia).
+Everything else, including all six phone-screen mockups in `screens.tsx`, is a
+server component.
 
 ### Icons
 Use **lucide-react** for all iconography (e.g. `Check`, `Plus`/`Minus`,
@@ -147,6 +200,10 @@ gratis", "Buat album", "Langkah 01"). Currency is Indonesian rupiah written like
 - **React text-node markers:** SSR output splits `-{x}%` into
   `-<!-- -->50<!-- -->%`. The rendered text is still `-50%`; grepping the raw
   HTML for `-50%` will miss. Don't be fooled.
+- **Camera needs a secure context:** `getUserMedia` only works on `localhost` or
+  HTTPS. Scanning the dev QR from a phone over the LAN is **not** a secure origin,
+  so the demo silently uses the native-picker fallback there; the in-browser
+  viewfinder works fully only on `localhost` or a deployed HTTPS URL.
 - The previous static implementation was removed; its history is in git if you
   need to reference the original inline-styled version.
 

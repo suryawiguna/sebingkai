@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { Camera, RotateCcw } from "lucide-react";
+import { PhotoViewer } from "./PhotoViewer";
 
 type DemoGalleryProps = {
   guestName: string;
@@ -10,12 +12,23 @@ type DemoGalleryProps = {
   onReset: () => void;
 };
 
+const tabPill = (active: boolean) =>
+  `whitespace-nowrap rounded-full px-3 py-1.5 font-body text-[11.5px] font-medium transition-colors ${
+    active ? "bg-ink text-base" : "bg-surface-2 text-muted"
+  }`;
+
 /**
  * DemoGallery — the revealed album. Interactive version of ScreenAlbum,
- * rendering the visitor's own captured photos in a 2-column grid.
+ * rendering the visitor's own captured photos in a contributor-filterable grid.
  */
 export function DemoGallery({ guestName, photos, limit, onOpenCamera, onReset }: DemoGalleryProps) {
   const who = guestName || "Kamu";
+  const [filter, setFilter] = useState<"all" | "me">("all");
+  const [viewer, setViewer] = useState<number | null>(null);
+  // Every demo capture belongs to the current visitor, so the contributor
+  // filter narrows to the same set — the tab toggle is fully wired regardless.
+  const visible = filter === "all" ? photos : photos;
+
   return (
     <div className="flex h-dvh flex-col bg-base">
       <div className="px-5 pt-[max(44px,env(safe-area-inset-top))] pb-3">
@@ -28,16 +41,16 @@ export function DemoGallery({ guestName, photos, limit, onOpenCamera, onReset }:
           </span>
         </div>
         <div className="mt-3 flex gap-[7px]">
-          <span className="whitespace-nowrap rounded-full bg-ink px-3 py-1.5 font-body text-[11.5px] font-medium text-base">
+          <button type="button" onClick={() => setFilter("all")} className={tabPill(filter === "all")}>
             Semua
-          </span>
-          <span className="whitespace-nowrap rounded-full bg-surface-2 px-3 py-1.5 font-body text-[11.5px] font-medium text-muted">
+          </button>
+          <button type="button" onClick={() => setFilter("me")} className={tabPill(filter === "me")}>
             {who}
-          </span>
+          </button>
         </div>
       </div>
 
-      {photos.length === 0 ? (
+      {visible.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-10 text-center">
           <Camera size={26} strokeWidth={1.5} className="text-muted" />
           <p className="font-body text-[14px] leading-[1.5] text-muted">
@@ -45,19 +58,18 @@ export function DemoGallery({ guestName, photos, limit, onOpenCamera, onReset }:
           </p>
         </div>
       ) : (
-        <div className="grid flex-1 grid-cols-2 content-start gap-2 overflow-y-auto px-5 pb-2">
-          {photos.map((src, i) => (
-            <div
+        <div className="grid min-h-0 flex-1 grid-cols-3 content-start gap-1.5 overflow-y-auto px-5 pb-2">
+          {visible.map((src, i) => (
+            <button
               key={i}
-              className="reveal-pop relative aspect-[1/1.2] overflow-hidden rounded-[12px] border border-border"
-              style={{ animationDelay: `${i * 50}ms` }}
+              type="button"
+              onClick={() => setViewer(i)}
+              className="reveal-pop relative aspect-square overflow-hidden rounded-[10px] border border-border transition-transform duration-100 active:scale-[0.97]"
+              style={{ animationDelay: `${i * 45}ms` }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={src} alt="" className="h-full w-full object-cover" />
-              <span className="absolute bottom-1.5 left-1.5 rounded-full bg-black/55 px-[7px] py-0.5 font-body text-[10px] font-medium text-white backdrop-blur-[2px]">
-                {who}
-              </span>
-            </div>
+            </button>
           ))}
         </div>
       )}
@@ -80,6 +92,15 @@ export function DemoGallery({ guestName, photos, limit, onOpenCamera, onReset }:
           <RotateCcw size={16} strokeWidth={1.8} />
         </button>
       </div>
+
+      {viewer !== null && visible[viewer] && (
+        <PhotoViewer
+          photos={visible}
+          index={viewer}
+          onIndexChange={setViewer}
+          onClose={() => setViewer(null)}
+        />
+      )}
     </div>
   );
 }

@@ -31,6 +31,7 @@ export function DemoFlow() {
       <DemoCamera
         count={store.photos.length}
         limit={store.limit}
+        lastPhoto={store.photos[store.photos.length - 1]}
         onCapture={store.addPhoto}
         onDone={() => setStep("gallery")}
       />

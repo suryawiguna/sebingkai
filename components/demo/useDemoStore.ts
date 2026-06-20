@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 
 const STORAGE_KEY = "sebingkai.demo.v1";
-/** Mirrors the "24 FOTO" copy used across the marketing screens. */
-export const PHOTO_LIMIT = 24;
+/** Each demo visitor gets a short single-use roll. */
+export const PHOTO_LIMIT = 6;
 
 export type DemoData = {
   guestName: string;

@@ -8,6 +8,8 @@ import { captureFilmFrame, fileToImage } from "@/lib/film";
 type DemoCameraProps = {
   count: number;
   limit: number;
+  /** Most recent capture, shown as the stacked preview by the shutter. */
+  lastPhoto?: string;
   /** Returns false if the capture was rejected (e.g. limit reached). */
   onCapture: (dataUrl: string) => boolean;
   onDone: () => void;
@@ -25,7 +27,7 @@ const CORNERS: React.CSSProperties[] = [
  * fallback to the native camera picker (<input capture>) when the browser
  * has no camera access. Captures get the shared film treatment.
  */
-export function DemoCamera({ count, limit, onCapture, onDone }: DemoCameraProps) {
+export function DemoCamera({ count, limit, lastPhoto, onCapture, onDone }: DemoCameraProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [mode, setMode] = useState<"loading" | "live" | "fallback">("loading");
@@ -162,17 +164,38 @@ export function DemoCamera({ count, limit, onCapture, onDone }: DemoCameraProps)
           onClick={shoot}
           disabled={atLimit}
           aria-label="Ambil foto"
-          className="flex size-[64px] items-center justify-center rounded-full border-[3px] border-white/85 shadow-rec transition-transform duration-100 active:scale-95 disabled:opacity-40"
+          className="flex size-[64px] items-center justify-center rounded-full border-[3px] border-white/85 transition-transform duration-100 active:scale-95 disabled:opacity-40"
         >
-          <span className="size-12 rounded-full bg-accent" />
+          <span className="size-12 rounded-full bg-white" />
         </button>
-        <button
-          type="button"
-          onClick={onDone}
-          className="absolute right-7 font-body text-[13px] font-medium text-white/85"
-        >
-          {count > 0 ? "Album" : "Lewati"}
-        </button>
+        <div className="absolute right-7">
+          {count > 0 && lastPhoto ? (
+            <button
+              type="button"
+              onClick={onDone}
+              aria-label="Lihat album"
+              className="relative block size-12 transition-transform duration-100 active:scale-95"
+            >
+              {/* stacked layers behind the latest shot imply the growing roll */}
+              <span className="absolute inset-0 -rotate-6 rounded-[9px] border border-white/30 bg-white/10" />
+              <span className="absolute inset-0 rotate-3 rounded-[9px] border border-white/30 bg-white/10" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={lastPhoto}
+                alt=""
+                className="relative size-12 rounded-[9px] border border-white/80 object-cover"
+              />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={onDone}
+              className="font-body text-[13px] font-medium text-white/85"
+            >
+              Lewati
+            </button>
+          )}
+        </div>
       </div>
 
       <input
