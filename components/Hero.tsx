@@ -1,8 +1,10 @@
+import Link from "next/link";
 import { Button } from "./ds/Button";
 import { PhoneFrame } from "./ds/PhoneFrame";
 import { Shell, Eyebrow } from "./ui";
 import { Reveal } from "./Reveal";
 import { RollCard } from "./RollCard";
+import { HeroQrCard } from "./HeroQrCard";
 import { ScreenJoin } from "./screens";
 
 // Desktop: phone (invite screen) with two floating roll cards tucked at corners.
@@ -60,13 +62,18 @@ export function Hero() {
             <Button variant="primary" size="lg">
               Mulai gratis
             </Button>
-            <Button variant="secondary" size="lg">
-              Lihat contoh
-            </Button>
+            <Link href="/demo">
+              <Button variant="secondary" size="lg">
+                Coba demo
+              </Button>
+            </Link>
           </div>
           <p className="mt-[18px] font-body text-[14px] text-muted">
             Gratis hingga 5 tamu · tanpa kartu kredit
           </p>
+          <div className="mt-6 hidden desk:block">
+            <HeroQrCard />
+          </div>
         </Reveal>
 
         <Reveal delay={140}>
