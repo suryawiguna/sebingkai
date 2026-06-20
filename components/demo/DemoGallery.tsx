@@ -1,8 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Camera, RotateCcw } from "lucide-react";
-import { PhotoViewer } from "./PhotoViewer";
+import { Camera, Download, RotateCcw } from "lucide-react";
+import Lightbox from "yet-another-react-lightbox";
+import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
+import "yet-another-react-lightbox/styles.css";
+import "yet-another-react-lightbox/plugins/thumbnails.css";
+import { savePhotos } from "@/lib/save";
 
 type DemoGalleryProps = {
   guestName: string;
@@ -24,10 +28,21 @@ const tabPill = (active: boolean) =>
 export function DemoGallery({ guestName, photos, limit, onOpenCamera, onReset }: DemoGalleryProps) {
   const who = guestName || "Kamu";
   const [filter, setFilter] = useState<"all" | "me">("all");
-  const [viewer, setViewer] = useState<number | null>(null);
+  const [viewer, setViewer] = useState(-1);
+  const [saving, setSaving] = useState(false);
   // Every demo capture belongs to the current visitor, so the contributor
   // filter narrows to the same set — the tab toggle is fully wired regardless.
   const visible = filter === "all" ? photos : photos;
+
+  async function save(urls: string[]) {
+    if (saving || urls.length === 0) return;
+    setSaving(true);
+    try {
+      await savePhotos(urls);
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <div className="flex h-dvh flex-col bg-base">
@@ -74,33 +89,68 @@ export function DemoGallery({ guestName, photos, limit, onOpenCamera, onReset }:
         </div>
       )}
 
-      <div className="flex items-center gap-2 px-5 pt-3 pb-[max(20px,env(safe-area-inset-bottom))]">
-        <button
-          type="button"
-          onClick={onOpenCamera}
-          className="flex h-12 flex-1 items-center justify-center gap-2 rounded-md bg-accent font-body text-[14px] font-medium text-white transition-[background-color,transform] duration-150 active:scale-[0.98] hover:bg-accent-hover"
-        >
-          <Camera size={16} strokeWidth={1.8} />
-          Buka kamera
-        </button>
-        <button
-          type="button"
-          onClick={onReset}
-          aria-label="Mulai ulang"
-          className="flex size-12 items-center justify-center rounded-md border border-border bg-surface text-ink-soft transition-colors hover:bg-base-sunken"
-        >
-          <RotateCcw size={16} strokeWidth={1.8} />
-        </button>
+      <div className="px-5 pt-3 pb-[max(20px,env(safe-area-inset-bottom))]">
+        {photos.length > 0 && (
+          <button
+            type="button"
+            onClick={() => save(photos)}
+            disabled={saving}
+            className="mb-2 flex h-12 w-full items-center justify-center gap-2 rounded-md border border-border bg-surface font-body text-[14px] font-medium text-ink transition-colors hover:bg-base-sunken disabled:opacity-50"
+          >
+            <Download size={16} strokeWidth={1.8} />
+            {saving ? "Menyimpan…" : "Simpan semua ke galeri"}
+          </button>
+        )}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onOpenCamera}
+            className="flex h-12 flex-1 items-center justify-center gap-2 rounded-md bg-accent font-body text-[14px] font-medium text-white transition-[background-color,transform] duration-150 active:scale-[0.98] hover:bg-accent-hover"
+          >
+            <Camera size={16} strokeWidth={1.8} />
+            Buka kamera
+          </button>
+          <button
+            type="button"
+            onClick={onReset}
+            aria-label="Mulai ulang"
+            className="flex size-12 items-center justify-center rounded-md border border-border bg-surface text-ink-soft transition-colors hover:bg-base-sunken"
+          >
+            <RotateCcw size={16} strokeWidth={1.8} />
+          </button>
+        </div>
       </div>
 
-      {viewer !== null && visible[viewer] && (
-        <PhotoViewer
-          photos={visible}
-          index={viewer}
-          onIndexChange={setViewer}
-          onClose={() => setViewer(null)}
-        />
-      )}
+      <Lightbox
+        open={viewer >= 0}
+        index={Math.max(viewer, 0)}
+        close={() => setViewer(-1)}
+        on={{ view: ({ index }) => setViewer(index) }}
+        slides={visible.map((src) => ({ src }))}
+        plugins={[Thumbnails]}
+        carousel={{ finite: true }}
+        controller={{ closeOnBackdropClick: true }}
+        thumbnails={{ width: 56, height: 56, border: 0, gap: 8, padding: 0 }}
+        styles={{ container: { backgroundColor: "rgba(0,0,0,0.94)" } }}
+        toolbar={{
+          buttons: [
+            <button
+              key="save"
+              type="button"
+              className="yarl__button"
+              disabled={saving}
+              aria-label="Simpan foto ini"
+              onClick={() => {
+                const src = visible[viewer];
+                if (src) save([src]);
+              }}
+            >
+              <Download size={22} strokeWidth={1.8} />
+            </button>,
+            "close",
+          ],
+        }}
+      />
     </div>
   );
 }

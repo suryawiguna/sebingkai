@@ -1,8 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
-const STORAGE_KEY = "sebingkai.demo.v1";
 /** Each demo visitor gets a short single-use roll. */
 export const PHOTO_LIMIT = 6;
 
@@ -14,62 +13,36 @@ export type DemoData = {
 
 const EMPTY: DemoData = { guestName: "", photos: [] };
 
-function read(): DemoData {
-  if (typeof window === "undefined") return EMPTY;
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return EMPTY;
-    const parsed = JSON.parse(raw) as Partial<DemoData>;
-    return {
-      guestName: typeof parsed.guestName === "string" ? parsed.guestName : "",
-      photos: Array.isArray(parsed.photos) ? parsed.photos.filter((p) => typeof p === "string") : [],
-    };
-  } catch {
-    return EMPTY;
-  }
-}
-
 /**
- * useDemoStore — localStorage-backed demo state (name + captured photos).
- * Self-contained, single-device; no backend.
+ * useDemoStore — in-memory demo state (name + captured photos). Intentionally
+ * NOT persisted: every device/visit starts fresh, so the gallery only ever
+ * shows photos taken in this session — never another user's or a past cache.
+ * Reloading the page clears everything.
  */
 export function useDemoStore() {
   const [data, setData] = useState<DemoData>(EMPTY);
-  const [hydrated, setHydrated] = useState(false);
-
-  useEffect(() => {
-    setData(read());
-    setHydrated(true);
-  }, []);
-
-  const persist = useCallback((next: DemoData) => {
-    setData(next);
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-    } catch {
-      /* quota or private-mode — keep working from in-memory state */
-    }
-  }, []);
 
   const setName = useCallback(
-    (guestName: string) => persist({ ...read(), guestName }),
-    [persist],
+    (guestName: string) => setData((d) => ({ ...d, guestName })),
+    [],
   );
 
   const addPhoto = useCallback(
     (dataUrl: string) => {
-      const current = read();
-      if (current.photos.length >= PHOTO_LIMIT) return false;
-      persist({ ...current, photos: [...current.photos, dataUrl] });
+      if (data.photos.length >= PHOTO_LIMIT) return false;
+      // Updater still guards the cap as the real enforcement (rapid taps).
+      setData((d) =>
+        d.photos.length >= PHOTO_LIMIT ? d : { ...d, photos: [...d.photos, dataUrl] },
+      );
       return true;
     },
-    [persist],
+    [data.photos.length],
   );
 
-  const reset = useCallback(() => persist(EMPTY), [persist]);
+  const reset = useCallback(() => setData(EMPTY), []);
 
   return {
-    hydrated,
+    hydrated: true,
     guestName: data.guestName,
     photos: data.photos,
     atLimit: data.photos.length >= PHOTO_LIMIT,
