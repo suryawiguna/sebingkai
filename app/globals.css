@@ -1,0 +1,117 @@
+@import "tailwindcss";
+
+/* ============================================================================
+ * Sebingkai — "Dark Film" design tokens, ported to Tailwind v4 @theme.
+ * Pure-dark surfaces, near-white ink, one recording-red accent.
+ * ========================================================================== */
+@theme {
+  /* ---- Breakpoints (match the original BP map) ---- */
+  --breakpoint-tab: 640px;
+  --breakpoint-desk: 920px;
+
+  /* ---- Color palette ---- */
+  --color-base: #0b0b0c; /* Near-black — main canvas */
+  --color-surface: #161618; /* Cards, raised panels */
+  --color-surface-2: #202024; /* Hover / higher surfaces */
+  --color-phone: #000000; /* Darkest — phone body, camera screen */
+  --color-accent: #ff2d2d; /* Recording red — shutter + CTAs only */
+  --color-accent-soft: rgba(255, 45, 45, 0.14);
+  --color-accent-press: #e0241c;
+  --color-accent-hover: #ff4d45;
+  --color-accent-glow: rgba(255, 45, 45, 0.16);
+  --color-ink: #f4f3f1; /* Near-white — primary text & wordmark */
+  --color-ink-soft: #c7c6c2; /* Secondary text */
+  --color-muted: #8b8a86; /* Subheads, captions */
+  --color-border: #2a2a2e; /* Hairlines, dividers */
+  --color-base-sunken: #121214; /* Recessed wells */
+  --color-on-soft: #ff6b61; /* Text on red-soft fills */
+
+  /* ---- Typography ---- */
+  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  --font-body: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: var(--font-dm-mono), ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* ---- Radius ---- */
+  --radius-sm: 10px;
+  --radius-md: 18px;
+  --radius-lg: 28px;
+  --radius-phone: 46px;
+  --radius-pill: 999px;
+
+  /* ---- Elevation ---- */
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --shadow-float: 0 24px 60px rgba(0, 0, 0, 0.6);
+  --shadow-rec: 0 0 0 6px var(--color-accent-glow);
+}
+
+/* ---- Base ---------------------------------------------------------------- */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 80px;
+}
+body {
+  background: var(--color-base);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+::selection {
+  background: var(--color-accent-soft);
+  color: var(--color-accent-press);
+}
+h1,
+h2,
+h3,
+p {
+  text-wrap: pretty;
+}
+img {
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+/* Cool, crisp film treatment */
+.film {
+  filter: contrast(1.08) saturate(0.85) brightness(0.98);
+}
+
+/* ---- Scroll-reveal ------------------------------------------------------- */
+.rv {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity 0.6s ease,
+    transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.rv.rv-show {
+  opacity: 1;
+  transform: none;
+}
+
+@keyframes revealPop {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.reveal-pop {
+  animation: revealPop 0.5s ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rv {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .reveal-pop {
+    animation: none !important;
+    opacity: 1 !important;
+  }
+}
