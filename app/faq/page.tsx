@@ -8,7 +8,7 @@ import { Shell, Eyebrow } from "@/components/ui";
 import { faqItems } from "@/lib/faq";
 
 export const metadata: Metadata = {
-  title: "Pertanyaan umum · Sebingkai",
+  title: "Pertanyaan umum",
   description:
     "Jawaban untuk pertanyaan tersering soal Sebingkai — kamera film sekali pakai lewat QR, preset film, waktu reveal, mengunduh foto, dan harga.",
   alternates: { canonical: "/faq" },
@@ -18,6 +18,9 @@ export const metadata: Metadata = {
       "Jawaban untuk pertanyaan tersering soal Sebingkai — QR, preset film, waktu reveal, unduh foto, dan harga.",
     url: "/faq",
     type: "website",
+    // Pages that declare their own openGraph don't inherit the file-based OG
+    // image, so reference it explicitly.
+    images: ["/opengraph-image"],
   },
 };
 

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Fraunces, Inter, DM_Mono } from "next/font/google";
+import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -22,9 +23,39 @@ const dmMono = DM_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sebingkai · Satu bingkai, satu cerita",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "Sebingkai · Satu bingkai, satu cerita",
+    template: "%s · Sebingkai",
+  },
   description:
     "Bagikan satu QR di acaramu. Setiap tamu dapat kamera film sekali pakai di browser — satu preset, satu album yang terungkap bersama setelah acara selesai.",
+  keywords: [
+    "kamera sekali pakai",
+    "kamera film nikahan",
+    "foto tamu QR",
+    "galeri foto acara",
+    "album foto pernikahan",
+    "kamera tamu",
+    "disposable camera online",
+  ],
+  applicationName: "Sebingkai",
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    siteName: "Sebingkai",
+    locale: "id_ID",
+    url: "/",
+    title: "Sebingkai · Satu bingkai, satu cerita",
+    description:
+      "Bagikan satu QR di acaramu. Setiap tamu dapat kamera film sekali pakai di browser — satu album yang terungkap bersama setelah acara.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Sebingkai · Satu bingkai, satu cerita",
+    description:
+      "Satu QR untuk acaramu. Setiap tamu dapat kamera film sekali pakai di browser — satu album bersama.",
+  },
 };
 
 export default function RootLayout({
