@@ -18,18 +18,18 @@ const footerCols = [
   {
     h: "Produk",
     links: [
-      { label: "Cara kerja", href: "#cara-kerja" },
-      { label: "Harga", href: "#harga" },
-      { label: "Contoh acara", href: "#contoh" },
+      { label: "Cara kerja", href: "/#cara-kerja" },
+      { label: "Harga", href: "/#harga" },
+      { label: "Contoh acara", href: "/#contoh" },
     ],
   },
   {
     h: "Untuk acara",
     links: [
-      { label: "Pernikahan", href: "#contoh" },
-      { label: "Ulang tahun", href: "#contoh" },
-      { label: "Pesta", href: "#contoh" },
-      { label: "Perjalanan", href: "#contoh" },
+      { label: "Pernikahan", href: "/#contoh" },
+      { label: "Ulang tahun", href: "/#contoh" },
+      { label: "Pesta", href: "/#contoh" },
+      { label: "Perjalanan", href: "/#contoh" },
     ],
   },
   {
@@ -110,15 +110,9 @@ export function ClosingCta() {
                 </p>
                 <nav className="flex flex-col gap-[11px]">
                   {c.links.map((l) =>
-                    l.href.startsWith("/") ? (
-                      <Link
-                        key={l.label}
-                        href={l.href}
-                        className="font-body text-[14px] text-muted no-underline hover:text-ink"
-                      >
-                        {l.label}
-                      </Link>
-                    ) : (
+                    l.href.includes("#") ? (
+                      // Hash links (incl. /#section): plain <a> guarantees the
+                      // browser scrolls to the section from any page.
                       <a
                         key={l.label}
                         href={l.href}
@@ -126,6 +120,14 @@ export function ClosingCta() {
                       >
                         {l.label}
                       </a>
+                    ) : (
+                      <Link
+                        key={l.label}
+                        href={l.href}
+                        className="font-body text-[14px] text-muted no-underline hover:text-ink"
+                      >
+                        {l.label}
+                      </Link>
                     )
                   )}
                 </nav>
