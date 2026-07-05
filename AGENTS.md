@@ -43,9 +43,15 @@ it type-checks and statically prerenders the page. Always run it after changes.
 
 ```
 app/
-  layout.tsx        Root layout: loads the 3 Google fonts, sets <html lang="id">, metadata
+  layout.tsx        Root layout: fonts, <html lang="id">, metadataBase + title
+                    template + OpenGraph/Twitter defaults
   page.tsx          Composes the sections in order (server component)
   globals.css       Tailwind import + @theme design tokens + base/reveal CSS
+  opengraph-image.tsx  Dynamic 1200x630 branded OG card (next/og), inherited site-wide
+  sitemap.ts        / + /faq + SEO landing slugs (excludes noindex /demo)
+  robots.ts         Allow all, disallow /demo, links sitemap
+  faq/page.tsx      Standalone FAQ page (h1 + FAQPage JSON-LD; reuses FaqAccordion)
+  [landing]/page.tsx  SSG keyword landing pages (dynamicParams=false); data in lib/landings.ts
   demo/
     layout.tsx      Demo wrapper: noindex metadata + viewport (viewportFit: cover)
     page.tsx        Renders <DemoFlow/>
@@ -78,11 +84,14 @@ components/
   CaraKerja.tsx     "How it works" 3-step section
   Showcase.tsx      Client: tabbed event-category showcase
   Pricing.tsx       Client: selectable pricing tiers (with discount badges)
-  Faq.tsx           Client: accordion
-  Closing.tsx       Closing CTA (filmstrip) + footer
+  Faq.tsx           Client: accordion. Exports FaqAccordion (reused by /faq); items in lib/faq.ts
+  Closing.tsx       Closing CTA (filmstrip) + footer (footer links now all resolve)
 lib/
   images.ts         UNSPLASH id map + ev(key, w) URL helper
   film.ts           captureFilmFrame() / fileToImage() — bake the .film look into captures
+  faq.ts            Shared FAQ items (homepage section + /faq page + JSON-LD)
+  landings.ts       SEO landing-page content (one entry per target keyword)
+  site.ts           SITE_URL (canonical origin; NEXT_PUBLIC_SITE_URL overridable)
 next.config.ts      images.remotePatterns allows images.unsplash.com
 ```
 
