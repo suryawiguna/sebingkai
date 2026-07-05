@@ -4,29 +4,7 @@ import { useState } from "react";
 import { Plus, Minus } from "lucide-react";
 import { Shell, Eyebrow } from "./ui";
 import { Reveal } from "./Reveal";
-
-const items = [
-  {
-    q: "Apakah tamu perlu memasang aplikasi?",
-    a: "Tidak. Tamu cukup memindai QR dan kamera film langsung terbuka di browser — tanpa unduh, tanpa akun, dari iPhone, Android, atau desktop.",
-  },
-  {
-    q: "Apa itu preset film?",
-    a: "Preset meniru karakter film analog — warna, butiran, dan kontrasnya — supaya tiap jepretan terasa seperti kamera sekali pakai yang sesungguhnya.",
-  },
-  {
-    q: "Kapan foto bisa dilihat?",
-    a: "Foto tersembunyi hingga waktu reveal yang kamu atur. Saat tiba, semuanya muncul serentak untuk semua orang pada saat yang bersamaan.",
-  },
-  {
-    q: "Bisakah aku mengunduh fotonya?",
-    a: "Bisa. Setelah album terungkap, unduh foto satu per satu atau seluruh album sekaligus dalam resolusi penuh.",
-  },
-  {
-    q: "Apakah benar-benar gratis?",
-    a: "Album hingga 5 tamu gratis selamanya. Untuk tamu lebih banyak, cukup bayar sekali per acara — tanpa langganan, tanpa perpanjangan.",
-  },
-];
+import { faqItems } from "@/lib/faq";
 
 function FaqItem({
   q,
@@ -66,9 +44,27 @@ function FaqItem({
   );
 }
 
-export function Faq() {
+// Reusable accordion over the shared FAQ items — used by the homepage section
+// below and by the standalone /faq page.
+export function FaqAccordion() {
   const [open, setOpen] = useState(0);
 
+  return (
+    <>
+      {faqItems.map((it, i) => (
+        <FaqItem
+          key={i}
+          q={it.q}
+          a={it.a}
+          open={open === i}
+          onToggle={() => setOpen(open === i ? -1 : i)}
+        />
+      ))}
+    </>
+  );
+}
+
+export function Faq() {
   return (
     <section id="faq" className="border-t border-border bg-base py-14 desk:py-[84px]">
       <Shell max={760}>
@@ -79,15 +75,7 @@ export function Faq() {
           </h2>
         </Reveal>
         <Reveal delay={60} className="border-t border-border">
-          {items.map((it, i) => (
-            <FaqItem
-              key={i}
-              q={it.q}
-              a={it.a}
-              open={open === i}
-              onToggle={() => setOpen(open === i ? -1 : i)}
-            />
-          ))}
+          <FaqAccordion />
         </Reveal>
       </Shell>
     </section>

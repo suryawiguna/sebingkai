@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 
 export const metadata: Metadata = {
-  title: "Coba Sebingkai · Demo",
+  title: { absolute: "Coba Sebingkai · Demo" },
   robots: { index: false, follow: false },
 };
 

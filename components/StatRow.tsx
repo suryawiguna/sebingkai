@@ -1,9 +1,11 @@
 import { Shell } from "./ui";
 import { Reveal } from "./Reveal";
 
+// Honest product facts — no fabricated traction numbers. (When real
+// event/photo counts exist, wire these to live data.)
 const stats = [
-  { v: "120rb+", l: "momen terabadikan" },
-  { v: "3.400", l: "album dibuat" },
+  { v: "1 QR", l: "untuk semua tamu" },
+  { v: "Tanpa app", l: "langsung dari browser" },
   { v: "Gratis", l: "untuk mulai" },
 ];
 

@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Camera, Download, RotateCcw } from "lucide-react";
+import Link from "next/link";
+import { Camera, Download, RotateCcw, ArrowRight } from "lucide-react";
 import Lightbox from "yet-another-react-lightbox";
 import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
 import "yet-another-react-lightbox/styles.css";
 import "yet-another-react-lightbox/plugins/thumbnails.css";
 import { savePhotos } from "@/lib/save";
+import { Logo } from "../ds/Logo";
 
 type DemoGalleryProps = {
   guestName: string;
@@ -119,6 +121,23 @@ export function DemoGallery({ guestName, photos, limit, onOpenCamera, onReset }:
             <RotateCcw size={16} strokeWidth={1.8} />
           </button>
         </div>
+
+        {/* Viral loop: subtle Sebingkai watermark + host-signup CTA. The
+            ?ref=gallery param tags new hosts that originate from an album view
+            (stored/attributed once host signup + DB exist — see Task 5). */}
+        <Link
+          href="/?ref=gallery"
+          className="group mt-2.5 flex items-center justify-center gap-2 py-1 font-body text-[12px] text-muted transition-colors hover:text-ink"
+        >
+          <Logo size={13} className="opacity-60 transition-opacity group-hover:opacity-90" />
+          <span aria-hidden className="text-border">·</span>
+          <span>Buat acaramu sendiri</span>
+          <ArrowRight
+            size={13}
+            strokeWidth={1.8}
+            className="transition-transform group-hover:translate-x-0.5"
+          />
+        </Link>
       </div>
 
       <Lightbox

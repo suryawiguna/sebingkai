@@ -1,15 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { Logo } from "./ds/Logo";
 import { Button } from "./ds/Button";
 import { Shell } from "./ui";
 
+// Homepage-relative section anchors so the nav works from any page (/faq,
+// landing pages) — not just the homepage.
 const links = [
-  { label: "Cara kerja", href: "#cara-kerja" },
-  { label: "Untuk acara", href: "#contoh" },
-  { label: "Harga", href: "#harga" },
+  { label: "Cara kerja", href: "/#cara-kerja" },
+  { label: "Untuk acara", href: "/#contoh" },
+  { label: "Harga", href: "/#harga" },
 ];
 
 export function SiteHeader() {
@@ -18,14 +21,14 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-base/[0.72] backdrop-blur-[12px]">
       <Shell className="relative flex h-[60px] items-center justify-between desk:h-[70px]">
-        <a href="#top" className="inline-flex no-underline">
+        <Link href="/" className="inline-flex no-underline">
           <span className="desk:hidden">
             <Logo size={21} />
           </span>
           <span className="hidden desk:inline-flex">
             <Logo size={24} />
           </span>
-        </a>
+        </Link>
 
         {/* Desktop nav */}
         <nav className="absolute left-1/2 hidden -translate-x-1/2 gap-8 desk:flex">
@@ -86,12 +89,13 @@ export function SiteHeader() {
                 {l.label}
               </a>
             ))}
-            <a
-              href="#"
+            <Link
+              href="/demo"
+              onClick={() => setOpen(false)}
               className="px-0.5 py-[13px] font-body text-[15px] text-muted no-underline"
             >
-              Masuk
-            </a>
+              Coba demo
+            </Link>
           </nav>
         </Shell>
       </div>
