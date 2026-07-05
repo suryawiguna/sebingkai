@@ -24,7 +24,7 @@ const tiers: Tier[] = [
   {
     id: "standar",
     name: "Standar",
-    price: "Rp99rb",
+    price: "Rp149rb",
     was: "Rp199rb",
     unit: "sekali bayar",
     guests: "Hingga 100 tamu",
@@ -33,8 +33,8 @@ const tiers: Tier[] = [
   {
     id: "besar",
     name: "Besar",
-    price: "Rp199rb",
-    was: "Rp299rb",
+    price: "Rp599rb",
+    was: "Rp799rb",
     unit: "sekali bayar",
     guests: "Tamu tak terbatas",
   },
