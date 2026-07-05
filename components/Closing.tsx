@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Button } from "./ds/Button";
 import { Logo } from "./ds/Logo";
 import { PhoneFrame } from "./ds/PhoneFrame";
@@ -10,10 +11,34 @@ const filmKeys = [
   "vows", "dj", "toast", "dance", "travel", "city", "balloons", "crowd", "confetti",
 ];
 
+// Every link resolves to a real destination — section anchors, the demo, or
+// the FAQ page. Links without a real target were removed (no auth/blog/privacy
+// pages exist yet).
 const footerCols = [
-  { h: "Produk", links: ["Cara kerja", "Harga", "Contoh", "Buat album"] },
-  { h: "Untuk acara", links: ["Pernikahan", "Ulang tahun", "Pesta", "Perjalanan"] },
-  { h: "Sumber", links: ["Blog", "Dukungan", "Masuk", "Privasi"] },
+  {
+    h: "Produk",
+    links: [
+      { label: "Cara kerja", href: "#cara-kerja" },
+      { label: "Harga", href: "#harga" },
+      { label: "Contoh acara", href: "#contoh" },
+    ],
+  },
+  {
+    h: "Untuk acara",
+    links: [
+      { label: "Pernikahan", href: "#contoh" },
+      { label: "Ulang tahun", href: "#contoh" },
+      { label: "Pesta", href: "#contoh" },
+      { label: "Perjalanan", href: "#contoh" },
+    ],
+  },
+  {
+    h: "Bantuan",
+    links: [
+      { label: "FAQ", href: "/faq" },
+      { label: "Coba demo", href: "/demo" },
+    ],
+  },
 ];
 
 export function ClosingCta() {
@@ -84,15 +109,25 @@ export function ClosingCta() {
                   {c.h}
                 </p>
                 <nav className="flex flex-col gap-[11px]">
-                  {c.links.map((l) => (
-                    <a
-                      key={l}
-                      href="#"
-                      className="font-body text-[14px] text-muted no-underline hover:text-ink"
-                    >
-                      {l}
-                    </a>
-                  ))}
+                  {c.links.map((l) =>
+                    l.href.startsWith("/") ? (
+                      <Link
+                        key={l.label}
+                        href={l.href}
+                        className="font-body text-[14px] text-muted no-underline hover:text-ink"
+                      >
+                        {l.label}
+                      </Link>
+                    ) : (
+                      <a
+                        key={l.label}
+                        href={l.href}
+                        className="font-body text-[14px] text-muted no-underline hover:text-ink"
+                      >
+                        {l.label}
+                      </a>
+                    )
+                  )}
                 </nav>
               </div>
             ))}

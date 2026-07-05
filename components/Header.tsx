@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { Logo } from "./ds/Logo";
 import { Button } from "./ds/Button";
@@ -86,12 +87,13 @@ export function SiteHeader() {
                 {l.label}
               </a>
             ))}
-            <a
-              href="#"
+            <Link
+              href="/demo"
+              onClick={() => setOpen(false)}
               className="px-0.5 py-[13px] font-body text-[15px] text-muted no-underline"
             >
-              Masuk
-            </a>
+              Coba demo
+            </Link>
           </nav>
         </Shell>
       </div>
