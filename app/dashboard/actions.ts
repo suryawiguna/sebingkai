@@ -52,6 +52,28 @@ export async function createEvent(formData: FormData) {
   redirect(`/dashboard/events/${data.id}`);
 }
 
+/** Reveal the album now (host override). RLS scopes the update to the owner. */
+export async function revealEvent(eventId: string) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("events")
+    .update({ status: "revealed" })
+    .eq("id", eventId);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/dashboard/events/${eventId}`);
+}
+
+/** Schedule (or clear) the automatic reveal time. `iso` is a UTC ISO string. */
+export async function setRevealAt(eventId: string, iso: string | null) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("events")
+    .update({ reveal_at: iso })
+    .eq("id", eventId);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/dashboard/events/${eventId}`);
+}
+
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
