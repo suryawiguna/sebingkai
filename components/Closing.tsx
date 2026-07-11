@@ -69,9 +69,11 @@ export function ClosingCta() {
             <p className="mx-auto mt-[18px] mb-[30px] max-w-[440px] font-body text-[16px] leading-[1.55] text-white/[0.72] desk:text-[18px]">
               Terlalu banyak momen untuk dipercayakan pada satu kamera.
             </p>
-            <Button variant="primary" size="lg">
-              Mulai gratis
-            </Button>
+            <Link href="/login">
+              <Button variant="primary" size="lg">
+                Mulai gratis
+              </Button>
+            </Link>
             <p className="mt-[18px] font-body text-[13px] text-white/[0.48]">
               Tanpa aplikasi · Tanpa akun untuk tamu
             </p>

@@ -59,9 +59,11 @@ export function Hero() {
             satu preset, satu album yang terungkap bersama setelah acara selesai.
           </p>
           <div className="mt-[30px] flex justify-center gap-3 desk:justify-start">
-            <Button variant="primary" size="lg">
-              Mulai gratis
-            </Button>
+            <Link href="/login">
+              <Button variant="primary" size="lg">
+                Mulai gratis
+              </Button>
+            </Link>
             <Link href="/demo">
               <Button variant="secondary" size="lg">
                 Coba demo
