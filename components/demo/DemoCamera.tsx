@@ -10,6 +10,8 @@ type DemoCameraProps = {
   limit: number;
   /** Most recent capture, shown as the stacked preview by the shutter. */
   lastPhoto?: string;
+  /** Optional error (e.g. a failed upload) surfaced as a banner. */
+  error?: string;
   /** Returns false if the capture was rejected (e.g. limit reached). */
   onCapture: (dataUrl: string) => boolean;
   onDone: () => void;
@@ -27,7 +29,7 @@ const CORNERS: React.CSSProperties[] = [
  * fallback to the native camera picker (<input capture>) when the browser
  * has no camera access. Captures get the shared film treatment.
  */
-export function DemoCamera({ count, limit, lastPhoto, onCapture, onDone }: DemoCameraProps) {
+export function DemoCamera({ count, limit, lastPhoto, error, onCapture, onDone }: DemoCameraProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [mode, setMode] = useState<"loading" | "live" | "fallback">("loading");
@@ -102,6 +104,12 @@ export function DemoCamera({ count, limit, lastPhoto, onCapture, onDone }: DemoC
   return (
     <div className="flex h-dvh flex-col bg-phone">
       {flash && <div className="pointer-events-none fixed inset-0 z-50 bg-white/80" />}
+
+      {error && (
+        <div className="fixed inset-x-4 top-[max(12px,env(safe-area-inset-top))] z-40 rounded-md bg-accent px-4 py-2.5 text-center font-body text-[13px] font-medium text-white shadow-lg">
+          {error}
+        </div>
+      )}
 
       <div className="flex items-center justify-between px-5 pt-[max(44px,env(safe-area-inset-top))] pb-3">
         <span className="font-mono text-[11px] tracking-[0.04em] text-white/[0.72]">DEMO SEBINGKAI</span>

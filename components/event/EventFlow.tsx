@@ -71,6 +71,7 @@ export function EventFlow({ event }: { event: EventForFlow }) {
         count={store.photos.length}
         limit={store.limit}
         lastPhoto={store.photos[store.photos.length - 1]}
+        error={store.error}
         onCapture={store.addPhoto}
         onDone={() => setStep("gallery")}
       />
