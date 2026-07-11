@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Check } from "lucide-react";
 import { Button } from "./ds/Button";
 import { PhoneFrame } from "./ds/PhoneFrame";
@@ -165,11 +166,13 @@ export function Pricing() {
             </Reveal>
 
             <Reveal delay={120} className="mt-[18px]">
-              <Button variant="primary" size="lg" fullWidth>
-                {chosen.id === "coba"
-                  ? "Mulai gratis"
-                  : `Pilih paket ${chosen.name} · ${chosen.price}`}
-              </Button>
+              <Link href="/login" className="block">
+                <Button variant="primary" size="lg" fullWidth>
+                  {chosen.id === "coba"
+                    ? "Mulai gratis"
+                    : `Pilih paket ${chosen.name} · ${chosen.price}`}
+                </Button>
+              </Link>
             </Reveal>
           </div>
         </div>

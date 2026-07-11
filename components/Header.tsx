@@ -43,16 +43,20 @@ export function SiteHeader() {
           ))}
         </nav>
         <div className="hidden items-center gap-3.5 desk:flex">
-          <Button variant="primary" size="sm">
-            Mulai gratis
-          </Button>
+          <Link href="/login">
+            <Button variant="primary" size="sm">
+              Mulai gratis
+            </Button>
+          </Link>
         </div>
 
         {/* Mobile cluster */}
         <div className="flex items-center gap-2.5 desk:hidden">
-          <Button variant="primary" size="sm">
-            Mulai
-          </Button>
+          <Link href="/login">
+            <Button variant="primary" size="sm">
+              Mulai
+            </Button>
+          </Link>
           <button
             aria-label="Menu"
             onClick={() => setOpen((v) => !v)}
