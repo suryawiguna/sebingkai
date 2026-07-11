@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { EventShare } from "@/components/host/EventShare";
+import { RevealControls } from "@/components/host/RevealControls";
 
 export const metadata = { title: "Acara", robots: { index: false } };
 
@@ -27,7 +28,7 @@ export default async function EventDetail({
 
   const { data: event } = await supabase
     .from("events")
-    .select("id, name, slug, tier, guest_limit, photo_limit_per_guest, status")
+    .select("id, name, slug, tier, guest_limit, photo_limit_per_guest, status, reveal_at")
     .eq("id", id)
     .single();
 
@@ -51,14 +52,15 @@ export default async function EventDetail({
           {event.photo_limit_per_guest} foto/tamu · status {event.status}
         </p>
 
-        <div className="mt-7">
+        <div className="mt-7 flex flex-col gap-4">
           <EventShare slug={event.slug} />
+          <RevealControls
+            eventId={event.id}
+            slug={event.slug}
+            status={event.status}
+            revealAt={event.reveal_at}
+          />
         </div>
-
-        <p className="mt-5 text-center font-body text-[13px] leading-[1.5] text-muted">
-          Alur kamera & album tamu menyusul (Phase B). Untuk sekarang, tautan &
-          QR sudah aktif dan siap dibagikan.
-        </p>
       </div>
     </main>
   );
