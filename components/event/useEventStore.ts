@@ -51,6 +51,7 @@ export function useEventStore(event: EventInfo) {
     (dataUrl: string) => {
       if (!guestId || countRef.current >= limit) return false;
       countRef.current += 1;
+      setError("");
       setPhotos((p) => [...p, dataUrl]);
 
       // Background upload; roll back on failure.

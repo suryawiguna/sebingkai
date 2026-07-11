@@ -52,9 +52,11 @@
 
 ## Required setup (Supabase dashboard — do this before testing)
 
-1. **Run the migration** — paste `supabase/migrations/0002_phase_b.sql` into the
-   SQL Editor and run it. Creates the bucket, upload policy, RPCs, and adds the
-   Realtime publication.
+1. **Run the migrations** — paste `supabase/migrations/0002_phase_b.sql` into the
+   SQL Editor and run it (bucket, upload policy, RPCs, Realtime publication),
+   then run `supabase/migrations/0003_fix_upload_policy.sql` (fixes guest uploads
+   being denied — the 0002 upload policy's events subquery ran under anon RLS and
+   always failed; 0003 wraps it in a SECURITY DEFINER function).
 2. **Confirm Realtime is on** for the project (Database → Replication /
    Realtime) — the migration adds `events` + `photos` to the publication.
 3. That's it — the bucket is created by the migration (public).
