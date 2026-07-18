@@ -87,20 +87,36 @@
 > unreachable), so this flow must be exercised on a real machine. `npm run
 > build` passes (type-check + prerender).
 
-## Known limitations / deferred
+## Egress optimization — thumbnails (done)
 
-- **Orphaned storage objects.** `uploadPhoto` writes the file *before* `add_photo`;
-  if the RPC rejects (limit reached / event closed) the object is already in the
-  public bucket, and anon has no storage DELETE policy to clean it up. Needs a
-  `SECURITY DEFINER` cleanup RPC or a storage lifecycle rule (also tie this to the
-  public-bucket / PII decision below).
-- **Public bucket = pre-reveal photos are reachable by URL.** The album is sealed
-  at the data layer (`get_event_photos`), but the image *files* are publicly
-  readable the moment they upload, protected only by an unguessable path. For
-  photos of people (PII), consider a private bucket + signed URLs before launch.
+Each capture now uploads a **~320px thumbnail** (`_thumb.jpg`) alongside the
+full image (`makeThumb` in `lib/film.ts`, uploaded best-effort in `uploadPhoto`).
+The album **grid** loads thumbnails; the **lightbox** and **save** use full-res.
+This cuts album-view egress ~5–10× — the difference between staying on a cheap
+Supabase plan and blowing the bandwidth cap on a single event. Grid `<img>` falls
+back to full-res if a thumb is missing (older photos). See "Supabase plan" note
+in `PRODUCT-READINESS.md`.
+
+## Known limitations / follow-ups (priority order)
+
+1. **[#1 pre-launch] Private bucket + signed URLs (PII).** Today the bucket is
+   public: the album is sealed at the data layer (`get_event_photos`), but the
+   image *files* are readable by anyone with the (unguessable) URL the moment
+   they upload. For photos of real people this is the most important hardening
+   before public launch. Contained change — flip the bucket, return signed URLs
+   from the read path, adjust `SharedAlbum` + save. **Not yet done: needs real
+   runtime testing (signed-URL expiry, fetch/CORS on save) that the CI sandbox
+   can't do.**
+2. **Orphaned storage objects.** `uploadPhoto` writes the file *before*
+   `add_photo`; if the RPC rejects (limit / closed) the object lingers (anon has
+   no DELETE policy). Now *two* objects per capture (full + thumb). Needs a
+   `SECURITY DEFINER` cleanup RPC or a storage lifecycle rule.
+3. **Retention/expiry** — photos never expire → storage + egress grow forever.
+   Auto-delete albums after N days.
+4. **Upload rate-limiting / moderation** — abuse vectors, unaddressed.
 
 ## Deferred to later phases
 
 - **Phase C** — Midtrans checkout for paid tiers (capacity is already modeled).
-- Album ZIP download, email "album is ready" (Resend), `?ref=` attribution,
-  upload rate-limiting, moderation, retention/expiry — see `PRODUCT-READINESS.md`.
+- Album ZIP download, email "album is ready" (Resend), `?ref=` attribution — see
+  `PRODUCT-READINESS.md`.

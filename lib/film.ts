@@ -43,6 +43,47 @@ export function captureFilmFrame(
   return canvas.toDataURL("image/jpeg", 0.82);
 }
 
+/** Longest edge (px) for album-grid thumbnails — a fraction of the egress. */
+export const THUMB_MAX_EDGE = 320;
+
+/** Loads a data URL into an HTMLImageElement. */
+export function dataUrlToImage(dataUrl: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = dataUrl;
+  });
+}
+
+/**
+ * Downscales an already-filmed capture (JPEG data URL) to a small thumbnail.
+ * No film filter is applied — the look is already baked into the source.
+ * Returns the original on any failure so callers can stay resilient.
+ */
+export async function makeThumb(
+  dataUrl: string,
+  maxEdge: number = THUMB_MAX_EDGE,
+): Promise<string> {
+  try {
+    const img = await dataUrlToImage(dataUrl);
+    const { naturalWidth: w, naturalHeight: h } = img;
+    if (!w || !h) return dataUrl;
+    const scale = Math.min(1, maxEdge / Math.max(w, h));
+    const dw = Math.round(w * scale);
+    const dh = Math.round(h * scale);
+    const canvas = document.createElement("canvas");
+    canvas.width = dw;
+    canvas.height = dh;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return dataUrl;
+    ctx.drawImage(img, 0, 0, dw, dh);
+    return canvas.toDataURL("image/jpeg", 0.7);
+  } catch {
+    return dataUrl;
+  }
+}
+
 /** Loads a File (e.g. from the native camera picker) into an HTMLImageElement. */
 export function fileToImage(file: File): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {

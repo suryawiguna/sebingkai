@@ -24,17 +24,35 @@ function downloadFile(file: File) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+/** Resolves either a data: URL (sync) or an http(s) URL (fetched) to a Blob. */
+async function srcToBlob(src: string): Promise<Blob> {
+  if (src.startsWith("data:")) return dataUrlToBlob(src);
+  return (await fetch(src)).blob();
+}
+
 /**
- * Saves one or more photos to the device. Tries the native share sheet first
- * (so the user can "Save to Photos"), otherwise downloads each file.
+ * Saves one or more photos to the device. Accepts data: URLs (session captures)
+ * or http(s) URLs (album photos). Tries the native share sheet first (so the
+ * user can "Save to Photos"), otherwise downloads each file.
  * Returns true if the share/download was initiated (false only on hard failure).
  */
-export async function savePhotos(dataUrls: string[], prefix = "sebingkai"): Promise<boolean> {
-  if (dataUrls.length === 0) return false;
+export async function savePhotos(srcs: string[], prefix = "sebingkai"): Promise<boolean> {
+  if (srcs.length === 0) return false;
 
-  const files = dataUrls.map(
-    (u, i) => new File([dataUrlToBlob(u)], `${prefix}-${i + 1}.jpg`, { type: "image/jpeg" }),
-  );
+  // Data URLs stay synchronous so Safari keeps the click's activation for
+  // navigator.share; http(s) URLs (album) are fetched first (share may then
+  // fall back to download on iOS — acceptable).
+  const allData = srcs.every((s) => s.startsWith("data:"));
+  const files = allData
+    ? srcs.map(
+        (u, i) => new File([dataUrlToBlob(u)], `${prefix}-${i + 1}.jpg`, { type: "image/jpeg" }),
+      )
+    : await Promise.all(
+        srcs.map(
+          async (u, i) =>
+            new File([await srcToBlob(u)], `${prefix}-${i + 1}.jpg`, { type: "image/jpeg" }),
+        ),
+      );
 
   // No await before navigator.share() — keep the click's transient activation.
   if (typeof navigator !== "undefined" && navigator.canShare?.({ files })) {

@@ -2,9 +2,13 @@
 // the storage upload, and the RPC calls that enforce capacity/reveal rules.
 
 import { createClient } from "@/lib/supabase/client";
+import { makeThumb } from "@/lib/film";
 
 const BUCKET = "event-photos";
 const TOKEN_KEY = "sbk_guest_token";
+
+/** Derives the thumbnail object path from a full-photo path. */
+export const thumbPath = (fullPath: string) => fullPath.replace(/\.jpg$/, "_thumb.jpg");
 
 /** A stable anonymous identity for this device, persisted in localStorage. */
 export function getGuestToken(): string {
@@ -66,6 +70,17 @@ export async function uploadPhoto(
     .from(BUCKET)
     .upload(path, dataUrlToBlob(dataUrl), { contentType: "image/jpeg" });
   if (upErr) throw new Error(upErr.message);
+
+  // Best-effort thumbnail (the album grid loads these to slash egress). A thumb
+  // failure is non-fatal — the grid falls back to the full image.
+  try {
+    const thumb = dataUrlToBlob(await makeThumb(dataUrl));
+    await supabase.storage
+      .from(BUCKET)
+      .upload(thumbPath(path), thumb, { contentType: "image/jpeg" });
+  } catch {
+    /* ignore — grid falls back to full-res */
+  }
 
   const { error: rpcErr } = await supabase.rpc("add_photo", {
     p_event_id: eventId,
