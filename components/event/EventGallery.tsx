@@ -1,16 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { Camera, Download, Lock } from "lucide-react";
+import { Camera, Download, Lock, Loader2, Check } from "lucide-react";
 import Lightbox from "yet-another-react-lightbox";
 import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
 import "yet-another-react-lightbox/styles.css";
 import "yet-another-react-lightbox/plugins/thumbnails.css";
 import { savePhotos } from "@/lib/save";
+import type { PhotoUpload } from "./useEventStore";
 
 type EventGalleryProps = {
   eventName: string;
-  photos: string[];
+  uploads: PhotoUpload[];
   limit: number;
   revealAt: string | null;
   onOpenCamera: () => void;
@@ -33,13 +34,15 @@ function revealHint(revealAt: string | null): string {
  */
 export function EventGallery({
   eventName,
-  photos,
+  uploads,
   limit,
   revealAt,
   onOpenCamera,
 }: EventGalleryProps) {
   const [viewer, setViewer] = useState(-1);
   const [saving, setSaving] = useState(false);
+  const photos = uploads.map((u) => u.dataUrl);
+  const uploadingCount = uploads.filter((u) => u.status === "uploading").length;
 
   async function save(urls: string[]) {
     if (saving || urls.length === 0) return;
@@ -58,7 +61,12 @@ export function EventGallery({
           <h1 className="m-0 font-display text-[20px] font-semibold tracking-[-0.01em] text-ink">
             {eventName}
           </h1>
-          <span className="font-mono text-[11px] text-muted">
+          <span className="flex items-center gap-1.5 font-mono text-[11px] text-muted">
+            {uploadingCount > 0 && (
+              <span className="flex items-center gap-1 text-ink-soft">
+                <Loader2 size={11} className="animate-spin" /> menyimpan {uploadingCount}
+              </span>
+            )}
             {photos.length} / {limit} FOTO
           </span>
         </div>
@@ -79,16 +87,31 @@ export function EventGallery({
         </div>
       ) : (
         <div className="grid min-h-0 flex-1 grid-cols-3 content-start gap-1.5 overflow-y-auto px-5 pb-2">
-          {photos.map((src, i) => (
+          {uploads.map((u, i) => (
             <button
-              key={i}
+              key={u.id}
               type="button"
               onClick={() => setViewer(i)}
               className="reveal-pop relative aspect-square overflow-hidden rounded-[10px] border border-border transition-transform duration-100 active:scale-[0.97]"
               style={{ animationDelay: `${i * 45}ms` }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={src} alt="" className="h-full w-full object-cover" />
+              <img
+                src={u.dataUrl}
+                alt=""
+                className={`h-full w-full object-cover transition-opacity ${
+                  u.status === "uploading" ? "opacity-60" : "opacity-100"
+                }`}
+              />
+              {u.status === "uploading" ? (
+                <span className="absolute inset-0 flex items-center justify-center">
+                  <Loader2 size={18} className="animate-spin text-white drop-shadow" />
+                </span>
+              ) : (
+                <span className="absolute bottom-1 right-1 flex size-[18px] items-center justify-center rounded-full bg-accent shadow">
+                  <Check size={11} strokeWidth={3} className="text-white" />
+                </span>
+              )}
             </button>
           ))}
         </div>

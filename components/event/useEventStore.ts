@@ -11,15 +11,19 @@ export type EventInfo = {
   photo_limit_per_guest: number;
 };
 
+export type UploadStatus = "uploading" | "saved";
+export type PhotoUpload = { id: string; dataUrl: string; status: UploadStatus };
+
 /**
  * useEventStore — the real guest flow backing store. Captures show instantly
- * (local data URL) while the upload + add_photo RPC run in the background; a
- * failed upload rolls the photo back so the count stays truthful.
+ * (local data URL) and upload in the background; each carries a status
+ * (uploading → saved) so the UI can confirm it reached the event. A failed
+ * upload rolls the photo back so the count stays truthful.
  */
 export function useEventStore(event: EventInfo) {
   const [guestName, setGuestName] = useState("");
   const [guestId, setGuestId] = useState<string | null>(null);
-  const [photos, setPhotos] = useState<string[]>([]);
+  const [uploads, setUploads] = useState<PhotoUpload[]>([]);
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState("");
   const limit = event.photo_limit_per_guest;
@@ -52,16 +56,23 @@ export function useEventStore(event: EventInfo) {
       if (!guestId || countRef.current >= limit) return false;
       countRef.current += 1;
       setError("");
-      setPhotos((p) => [...p, dataUrl]);
+      const id =
+        typeof crypto !== "undefined" && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `${Date.now()}-${countRef.current}`;
+      setUploads((u) => [...u, { id, dataUrl, status: "uploading" }]);
 
-      // Background upload; roll back on failure. On success, ping album viewers.
+      // Background upload; mark saved on success, roll back on failure.
       uploadPhoto(event.id, guestId, dataUrl)
         .then(() => {
+          setUploads((u) =>
+            u.map((p) => (p.id === id ? { ...p, status: "saved" } : p)),
+          );
           void signalNewPhoto(event.id);
         })
         .catch((e) => {
           countRef.current = Math.max(0, countRef.current - 1);
-          setPhotos((p) => p.filter((u) => u !== dataUrl));
+          setUploads((u) => u.filter((p) => p.id !== id));
           setError(e instanceof Error ? e.message : "Gagal mengunggah foto");
         });
       return true;
@@ -74,9 +85,13 @@ export function useEventStore(event: EventInfo) {
     guestId,
     joined: !!guestId,
     joining,
-    photos,
+    uploads,
+    /** dataURLs only — for the camera preview, lightbox, and save-to-device. */
+    photos: uploads.map((u) => u.dataUrl),
+    count: uploads.length,
+    savingCount: uploads.filter((u) => u.status === "uploading").length,
     limit,
-    atLimit: photos.length >= limit,
+    atLimit: uploads.length >= limit,
     error,
     join,
     addPhoto,

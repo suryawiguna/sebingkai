@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Images } from "lucide-react";
+import { Images, Loader2, Check } from "lucide-react";
 import { ClockText } from "../ClockText";
 import { captureFilmFrame, fileToImage } from "@/lib/film";
 
@@ -12,6 +12,9 @@ type DemoCameraProps = {
   lastPhoto?: string;
   /** Optional error (e.g. a failed upload) surfaced as a banner. */
   error?: string;
+  /** When true, the most recent capture is still uploading (shows a spinner).
+   *  When explicitly false with photos present, it's confirmed saved. */
+  lastPhotoSaving?: boolean;
   /** Returns false if the capture was rejected (e.g. limit reached). */
   onCapture: (dataUrl: string) => boolean;
   onDone: () => void;
@@ -29,7 +32,15 @@ const CORNERS: React.CSSProperties[] = [
  * fallback to the native camera picker (<input capture>) when the browser
  * has no camera access. Captures get the shared film treatment.
  */
-export function DemoCamera({ count, limit, lastPhoto, error, onCapture, onDone }: DemoCameraProps) {
+export function DemoCamera({
+  count,
+  limit,
+  lastPhoto,
+  error,
+  lastPhotoSaving,
+  onCapture,
+  onDone,
+}: DemoCameraProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [mode, setMode] = useState<"loading" | "live" | "fallback">("loading");
@@ -193,6 +204,19 @@ export function DemoCamera({ count, limit, lastPhoto, error, onCapture, onDone }
                 alt=""
                 className="relative size-12 rounded-[9px] border border-white/80 object-cover"
               />
+              {lastPhotoSaving !== undefined && (
+                <span
+                  className={`absolute -bottom-1 -right-1 flex size-[18px] items-center justify-center rounded-full border-2 border-phone ${
+                    lastPhotoSaving ? "bg-black/70" : "bg-accent"
+                  }`}
+                >
+                  {lastPhotoSaving ? (
+                    <Loader2 size={10} className="animate-spin text-white" />
+                  ) : (
+                    <Check size={11} strokeWidth={3} className="text-white" />
+                  )}
+                </span>
+              )}
             </button>
           ) : (
             <button

@@ -66,12 +66,14 @@ export function EventFlow({ event }: { event: EventForFlow }) {
   if (revealed) return <SharedAlbum eventId={event.id} eventName={event.name} />;
 
   if (step === "camera") {
+    const last = store.uploads[store.uploads.length - 1];
     return (
       <DemoCamera
-        count={store.photos.length}
+        count={store.count}
         limit={store.limit}
-        lastPhoto={store.photos[store.photos.length - 1]}
+        lastPhoto={last?.dataUrl}
         error={store.error}
+        lastPhotoSaving={last ? last.status === "uploading" : undefined}
         onCapture={store.addPhoto}
         onDone={() => setStep("gallery")}
       />
@@ -82,7 +84,7 @@ export function EventFlow({ event }: { event: EventForFlow }) {
     return (
       <EventGallery
         eventName={event.name}
-        photos={store.photos}
+        uploads={store.uploads}
         limit={store.limit}
         revealAt={event.reveal_at}
         onOpenCamera={() => setStep("camera")}
