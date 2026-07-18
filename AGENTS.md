@@ -12,10 +12,13 @@ visual theme: pure-dark surfaces, near-white ink, and a single recording-red
 accent (`#FF2D2D`) reserved for the shutter and primary CTAs.
 
 This started as a static React + Babel single file and was rebuilt as a Next.js
-app. The marketing CTA buttons ("Mulai gratis") are intentionally
-non-functional placeholders — **except** the demo entry points, which lead to a
-real, working, client-only product demo at **`/demo`** (see "Demo flow" below).
-There is still no backend; the demo is entirely client-side.
+app. It now has a **real backend** (Supabase — Postgres + Auth + Storage +
+Realtime): **Phase A** added host login and event creation, **Phase B** added
+the real guest flow (join → camera upload → shared album + reveal). The
+marketing CTA buttons ("Mulai gratis") now link to **`/login`**. The **`/demo`**
+route is still the standalone **client-only** demo (in-memory, no backend) —
+distinct from the real product flow at **`/e/[slug]`**. See `docs/PHASE-B.md` and
+`docs/PRODUCT-READINESS.md`. Payments (Phase C, Midtrans) are not built yet.
 
 ## Tech stack
 
@@ -26,6 +29,10 @@ There is still no backend; the demo is entirely client-side.
 - **qrcode** for the real (scannable) QR codes in the hero card and demo gate
 - **yet-another-react-lightbox** for the demo gallery's swipeable full-photo viewer
 - `next/font/google` (Fraunces / Inter / DM Mono) and `next/image` (Unsplash photos)
+- **Supabase** via `@supabase/ssr` — Postgres, Auth (magic-link + Google OAuth),
+  Storage (public `event-photos` bucket), Realtime (**Broadcast** channels, not
+  `postgres_changes` — see `docs/PHASE-B.md`). Env: `NEXT_PUBLIC_SUPABASE_URL`,
+  `NEXT_PUBLIC_SUPABASE_ANON_KEY` (`.env.local`, gitignored; `.env.example`).
 - No ESLint, no test suite (yet)
 
 ## Commands
@@ -97,6 +104,25 @@ next.config.ts      images.remotePatterns allows images.unsplash.com
 
 Section render order lives in `app/page.tsx`: Header → Hero → StatRow →
 KameraTamu → CaraKerja → Showcase → Pricing → Faq → ClosingCta.
+
+## Backend & product flow (Phase A + B)
+
+```
+proxy.ts              Supabase session refresh + /dashboard auth gate (Next 16 "proxy")
+lib/supabase/         browser.ts / server.ts / middleware.ts clients (@supabase/ssr)
+lib/eventClient.ts    guest-side: device token, upload (+thumbnail), RPC calls, Broadcast signals
+supabase/migrations/  0001 schema+RLS · 0002 storage+RPCs+realtime · 0003 upload-policy fix
+app/login/            magic-link + Google login   app/auth/callback/  code exchange
+app/dashboard/        host: list/create events (actions.ts) + events/[id] (QR + reveal)
+app/e/[slug]/         REAL guest flow (fetch event → EventFlow)
+components/event/      EventFlow · EventJoin · EventGallery · SharedAlbum · useEventStore
+components/host/        EventShare (QR/link) · RevealControls (schedule / reveal now)
+```
+
+Guest ops are anonymous → they never touch tables directly; all go through
+`SECURITY DEFINER` RPCs. Reveal + album live-updates use Realtime **Broadcast**
+(anon has no RLS SELECT, so `postgres_changes` wouldn't reach guests). Full
+detail: `docs/PHASE-B.md`. Requires the migrations run in Supabase.
 
 ## Demo flow (`/demo`)
 

@@ -8,10 +8,11 @@ import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
 import "yet-another-react-lightbox/styles.css";
 import "yet-another-react-lightbox/plugins/thumbnails.css";
 import { createClient } from "@/lib/supabase/client";
+import { albumTopic, thumbPath } from "@/lib/eventClient";
 import { savePhotos } from "@/lib/save";
 import { Logo } from "../ds/Logo";
 
-type Photo = { id: string; url: string; guest: string };
+type Photo = { id: string; url: string; thumb: string; guest: string };
 
 const tabPill = (active: boolean) =>
   `whitespace-nowrap rounded-full px-3 py-1.5 font-body text-[11.5px] font-medium transition-colors ${
@@ -37,6 +38,7 @@ export function SharedAlbum({ eventId, eventName }: { eventId: string; eventName
       (r: { id: string; storage_path: string; guest_name: string | null }) => ({
         id: r.id,
         url: bucket.getPublicUrl(r.storage_path).data.publicUrl,
+        thumb: bucket.getPublicUrl(thumbPath(r.storage_path)).data.publicUrl,
         guest: r.guest_name || "Tamu",
       }),
     );
@@ -46,15 +48,13 @@ export function SharedAlbum({ eventId, eventName }: { eventId: string; eventName
 
   useEffect(() => {
     load();
-    // Live: any new photo for this event re-pulls the album.
+    // Live: guests broadcast on upload; re-pull the album. Broadcast (not
+    // postgres_changes) so anonymous viewers, who lack a photos SELECT policy,
+    // still receive the ping.
     const supabase = createClient();
     const channel = supabase
-      .channel(`album-${eventId}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "photos", filter: `event_id=eq.${eventId}` },
-        () => load(),
-      )
+      .channel(albumTopic(eventId))
+      .on("broadcast", { event: "new-photo" }, () => load())
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
@@ -120,8 +120,18 @@ export function SharedAlbum({ eventId, eventName }: { eventId: string; eventName
               className="reveal-pop relative aspect-square overflow-hidden rounded-[10px] border border-border transition-transform duration-100 active:scale-[0.97]"
               style={{ animationDelay: `${Math.min(i, 12) * 45}ms` }}
             >
+              {/* Grid loads the small thumb; falls back to full-res if a thumb
+                  is missing (e.g. photos from before thumbnails existed). */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={p.url} alt="" loading="lazy" className="h-full w-full object-cover" />
+              <img
+                src={p.thumb}
+                alt=""
+                loading="lazy"
+                onError={(e) => {
+                  if (e.currentTarget.src !== p.url) e.currentTarget.src = p.url;
+                }}
+                className="h-full w-full object-cover"
+              />
             </button>
           ))}
         </div>

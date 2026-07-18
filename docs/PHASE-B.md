@@ -36,8 +36,18 @@
   Served by public URL (unguessable paths).
 - **`get_event_photos` returns nothing until the event is revealed** — the album
   is sealed at the data layer, not just the UI.
-- **Realtime** publication includes `events` + `photos` so the guest flow and
-  album subscribe to the reveal flip and new photos.
+- **Realtime uses Broadcast, not `postgres_changes`.** Guests are anonymous and
+  have no SELECT policy on `events`/`photos`, and `postgres_changes` is RLS-gated
+  per subscriber — so it would deliver nothing to them. Instead: the host's
+  "reveal now" broadcasts `reveal` on `event-{id}`, and each guest broadcasts
+  `new-photo` on `album-{id}` after a successful upload. Broadcast on public
+  channels is not RLS-gated, so it reaches anon devices. Helpers:
+  `eventTopic`/`albumTopic` + `signalReveal`/`signalNewPhoto` in `lib/eventClient.ts`.
+  (The `alter publication … add table` lines in `0002` are now unused but
+  harmless.)
+- **Scheduled reveal** is driven by a client timer in `EventFlow`; times more
+  than ~24.8 days out (setTimeout's 32-bit limit) are skipped and instead resolve
+  on reload / via `get_event_by_slug` computing `revealed` server-side.
 
 ## Key files
 
@@ -57,8 +67,9 @@
    then run `supabase/migrations/0003_fix_upload_policy.sql` (fixes guest uploads
    being denied — the 0002 upload policy's events subquery ran under anon RLS and
    always failed; 0003 wraps it in a SECURITY DEFINER function).
-2. **Confirm Realtime is on** for the project (Database → Replication /
-   Realtime) — the migration adds `events` + `photos` to the publication.
+2. **Confirm Realtime is enabled** for the project — the guest flow uses public
+   **Broadcast** channels for the reveal flip and new-photo pings (no table
+   publication or RLS policy needed; the `0002` publication lines are unused).
 3. That's it — the bucket is created by the migration (public).
 
 ## How to test the full loop
@@ -76,8 +87,36 @@
 > unreachable), so this flow must be exercised on a real machine. `npm run
 > build` passes (type-check + prerender).
 
+## Egress optimization — thumbnails (done)
+
+Each capture now uploads a **~320px thumbnail** (`_thumb.jpg`) alongside the
+full image (`makeThumb` in `lib/film.ts`, uploaded best-effort in `uploadPhoto`).
+The album **grid** loads thumbnails; the **lightbox** and **save** use full-res.
+This cuts album-view egress ~5–10× — the difference between staying on a cheap
+Supabase plan and blowing the bandwidth cap on a single event. Grid `<img>` falls
+back to full-res if a thumb is missing (older photos). See "Supabase plan" note
+in `PRODUCT-READINESS.md`.
+
+## Known limitations / follow-ups (priority order)
+
+1. **[#1 pre-launch] Private bucket + signed URLs (PII).** Today the bucket is
+   public: the album is sealed at the data layer (`get_event_photos`), but the
+   image *files* are readable by anyone with the (unguessable) URL the moment
+   they upload. For photos of real people this is the most important hardening
+   before public launch. Contained change — flip the bucket, return signed URLs
+   from the read path, adjust `SharedAlbum` + save. **Not yet done: needs real
+   runtime testing (signed-URL expiry, fetch/CORS on save) that the CI sandbox
+   can't do.**
+2. **Orphaned storage objects.** `uploadPhoto` writes the file *before*
+   `add_photo`; if the RPC rejects (limit / closed) the object lingers (anon has
+   no DELETE policy). Now *two* objects per capture (full + thumb). Needs a
+   `SECURITY DEFINER` cleanup RPC or a storage lifecycle rule.
+3. **Retention/expiry** — photos never expire → storage + egress grow forever.
+   Auto-delete albums after N days.
+4. **Upload rate-limiting / moderation** — abuse vectors, unaddressed.
+
 ## Deferred to later phases
 
 - **Phase C** — Midtrans checkout for paid tiers (capacity is already modeled).
-- Album ZIP download, email "album is ready" (Resend), `?ref=` attribution,
-  upload rate-limiting, moderation, retention/expiry — see `PRODUCT-READINESS.md`.
+- Album ZIP download, email "album is ready" (Resend), `?ref=` attribution — see
+  `PRODUCT-READINESS.md`.

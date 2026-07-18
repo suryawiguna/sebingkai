@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { Eye, CalendarClock, X, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ds/Button";
+import { signalReveal } from "@/lib/eventClient";
 import { revealEvent, setRevealAt } from "@/app/dashboard/actions";
 
 type Props = {
@@ -24,7 +25,10 @@ function toLocalInput(iso: string | null): string {
 export function RevealControls({ eventId, slug, status, revealAt }: Props) {
   const [when, setWhen] = useState(toLocalInput(revealAt));
   const [pending, start] = useTransition();
-  const revealed = status === "revealed";
+  // A passed scheduled time reveals the album to guests without flipping
+  // `status`, so treat it as revealed here too (keeps the badge honest).
+  const revealed =
+    status === "revealed" || (revealAt != null && new Date(revealAt).getTime() <= Date.now());
 
   function schedule() {
     if (!when) return;
@@ -38,7 +42,11 @@ export function RevealControls({ eventId, slug, status, revealAt }: Props) {
   }
   function revealNow() {
     if (confirm("Ungkap album sekarang untuk semua tamu? Tindakan ini menghentikan pengambilan foto."))
-      start(() => revealEvent(eventId));
+      start(async () => {
+        await revealEvent(eventId);
+        // Push the flip to guest phones already on the page (Broadcast).
+        await signalReveal(eventId);
+      });
   }
 
   return (

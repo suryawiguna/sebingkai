@@ -22,18 +22,27 @@ service the site advertises — does not exist as a live service.
 |---|---|---|
 | Marketing landing page | ✅ Ready | Fast, responsive, SEO + OG, Indonesian |
 | SEO landing pages / FAQ / sitemap | ✅ Ready | `lib/landings.ts`, `/faq`, `sitemap.ts`, `robots.ts` |
-| Product demo (`/demo`) | ✅ Works, but client-only | In-memory, single device, wiped on reload |
-| User login / accounts | ❌ Missing | No auth system at all |
-| Saving user data | ❌ Missing | Nothing persisted server-side |
-| Photo upload / shared album | ❌ Missing | Photos never leave the device |
-| Payment flow | ❌ Missing | Pricing is visual; buttons are placeholders |
-| Cross-guest album (the core promise) | ❌ Missing | No server → guests can't share one roll |
+| Product demo (`/demo`) | ✅ Works, client-only | In-memory, single device, wiped on reload |
+| User login / accounts | ✅ Shipped (Phase A) | Host magic-link + Google (Supabase Auth) |
+| Saving user data | ✅ Shipped (Phase A) | Supabase Postgres: events/guests/photos/orders |
+| Photo upload / shared album | ✅ Shipped (Phase B) | Supabase Storage + shared album + reveal |
+| Cross-guest album (the core promise) | ✅ Shipped (Phase B) | Real join → upload → reveal; see `PHASE-B.md` |
+| Payment flow | ❌ Missing (Phase C) | Pricing visual; Midtrans checkout not built |
+| Private photo storage (PII) | ⚠️ Public bucket | #1 pre-launch hardening — see `PHASE-B.md` |
+| Supabase plan for launch | ⚠️ Free OK for now | Pro (~$25/mo) at launch — see "Supabase plan" below |
+
+> **Status (2026-07-11):** Phase A (auth + host events) merged to `main`. Phase B
+> (guest capture → shared album + reveal) built; see `PHASE-B.md`. The
+> "Complete user workflow" section below is the **original pre-Phase-A
+> assessment**, kept for history — the four "No" answers are now "Yes" per the
+> table above.
 
 ---
 
 ## Complete user workflow — technical readiness
 
-Here's the journey the site promises vs. what actually happens in code today.
+> ⚠️ **Historical (pre-Phase-A).** Superseded by the table above and `PHASE-B.md`.
+> Kept to show the starting point. Below describes the app *before* the backend.
 
 ### 1. Can a user log in?
 **No.** There is no authentication anywhere — no login page, no session, no
@@ -222,3 +231,21 @@ RLS: guests write photos only to their own event; album not readable before reve
 > Reuse note: `/demo` already has the camera, film pipeline (`lib/film.ts`),
 > gallery, and lightbox. Phase B is largely re-pointing that in-memory flow at
 > Supabase — not rebuilding UI.
+
+---
+
+## Supabase plan for launch
+
+**Free is fine for building/testing now; move to Pro (~$25/mo) at launch.**
+
+Binding free-tier limits for this app, in order:
+1. **Egress 5 GB/mo** — album *views* download photos; one event viewed by ~100
+   guests can exceed this. **Mitigated** by thumbnails in the grid (Phase B) —
+   full-res only in the lightbox — cutting view egress ~5–10×.
+2. **Auto-pause after 7 days inactivity** — disqualifies Free for a live product.
+3. **Storage 1 GB** — ~5–10 real events; photos never expire (add retention).
+
+Not a concern: Auth MAU (only hosts log in; guests are anonymous), DB size
+(metadata only). **Pro** gives 100 GB storage, 250 GB egress, no auto-pause,
+daily backups. Storage vendor stays Supabase (it's S3 + CDN under the hood) —
+no reason to move to raw AWS S3 at this scale.
