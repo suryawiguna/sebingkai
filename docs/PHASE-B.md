@@ -24,6 +24,13 @@
 
 - `RevealControls`: schedule an automatic reveal time, or **Ungkap sekarang**
   (reveal now). Shows sealed/revealed status + a preview/album link.
+- `PhotoLimitControl` + `CreateEventForm`: the host sets **photos per guest** at
+  creation (tier sets the default) and can change it anytime — takes effect
+  immediately (`add_photo` reads it live).
+- `EventPhotos`: host **moderation grid** — previews every photo regardless of
+  reveal state (`get_host_event_photos`) and deletes any (`delete_event_photo`
+  removes the row + full & thumb objects, freeing that guest's slot). Works
+  before and after reveal.
 
 ## Architecture / security
 
@@ -62,11 +69,13 @@
 
 ## Required setup (Supabase dashboard — do this before testing)
 
-1. **Run the migrations** — paste `supabase/migrations/0002_phase_b.sql` into the
-   SQL Editor and run it (bucket, upload policy, RPCs, Realtime publication),
-   then run `supabase/migrations/0003_fix_upload_policy.sql` (fixes guest uploads
-   being denied — the 0002 upload policy's events subquery ran under anon RLS and
-   always failed; 0003 wraps it in a SECURITY DEFINER function).
+1. **Run the migrations in order** — in the SQL Editor:
+   - `0002_phase_b.sql` — bucket, upload policy, RPCs, Realtime publication.
+   - `0003_fix_upload_policy.sql` — fixes guest uploads being denied (the 0002
+     upload policy's events subquery ran under anon RLS and always failed; 0003
+     wraps it in a SECURITY DEFINER function).
+   - `0004_host_moderation.sql` — host photo preview + delete RPCs
+     (`get_host_event_photos`, `delete_event_photo`).
 2. **Confirm Realtime is enabled** for the project — the guest flow uses public
    **Broadcast** channels for the reveal flip and new-photo pings (no table
    publication or RLS policy needed; the `0002` publication lines are unused).

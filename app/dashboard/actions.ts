@@ -33,6 +33,13 @@ export async function createEvent(formData: FormData) {
 
   const t = TIERS[tier] ?? TIERS.coba;
 
+  // Host-chosen per-guest photo limit; falls back to the tier default.
+  const rawLimit = parseInt(String(formData.get("photo_limit") ?? ""), 10);
+  const photo_limit_per_guest =
+    Number.isFinite(rawLimit) && rawLimit > 0
+      ? Math.min(rawLimit, 50)
+      : t.photo_limit_per_guest;
+
   const { data, error } = await supabase
     .from("events")
     .insert({
@@ -41,7 +48,7 @@ export async function createEvent(formData: FormData) {
       slug: makeSlug(),
       tier,
       guest_limit: t.guest_limit,
-      photo_limit_per_guest: t.photo_limit_per_guest,
+      photo_limit_per_guest,
     })
     .select("id")
     .single();
@@ -69,6 +76,18 @@ export async function setRevealAt(eventId: string, iso: string | null) {
   const { error } = await supabase
     .from("events")
     .update({ reveal_at: iso })
+    .eq("id", eventId);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/dashboard/events/${eventId}`);
+}
+
+/** Update the per-guest photo limit (1–50). RLS scopes it to the owner. */
+export async function setPhotoLimit(eventId: string, limit: number) {
+  const supabase = await createClient();
+  const n = Math.max(1, Math.min(50, Math.floor(limit)));
+  const { error } = await supabase
+    .from("events")
+    .update({ photo_limit_per_guest: n })
     .eq("id", eventId);
   if (error) throw new Error(error.message);
   revalidatePath(`/dashboard/events/${eventId}`);
