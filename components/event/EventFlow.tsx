@@ -9,6 +9,11 @@ import { EventJoin } from "./EventJoin";
 import { EventGallery } from "./EventGallery";
 import { SharedAlbum } from "./SharedAlbum";
 import { useEventStore, type EventInfo } from "./useEventStore";
+import { eventTopic } from "@/lib/eventClient";
+
+// setTimeout uses a signed 32-bit delay; anything larger fires almost
+// immediately. Reveals further out than this arrive via broadcast / reload.
+const MAX_TIMEOUT_MS = 2_147_483_647;
 
 type Step = "join" | "camera" | "gallery";
 
@@ -29,20 +34,14 @@ export function EventFlow({ event }: { event: EventForFlow }) {
   const [step, setStep] = useState<Step>("join");
   const [revealed, setRevealed] = useState(event.revealed);
 
-  // Live reveal: host flips status → revealed via Realtime.
+  // Live reveal: host "reveal now" broadcasts on the event topic. Broadcast is
+  // NOT RLS-gated, so it reaches anonymous guests (postgres_changes would not).
   useEffect(() => {
     if (revealed) return;
     const supabase = createClient();
     const channel = supabase
-      .channel(`event-${event.id}`)
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "events", filter: `id=eq.${event.id}` },
-        (payload) => {
-          const e = payload.new as { status?: string };
-          if (e.status === "revealed") setRevealed(true);
-        },
-      )
+      .channel(eventTopic(event.id))
+      .on("broadcast", { event: "reveal" }, () => setRevealed(true))
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
@@ -57,6 +56,7 @@ export function EventFlow({ event }: { event: EventForFlow }) {
       setRevealed(true);
       return;
     }
+    if (ms > MAX_TIMEOUT_MS) return; // too far out for one timer; arrives via reload
     const t = setTimeout(() => setRevealed(true), ms);
     return () => clearTimeout(t);
   }, [event.reveal_at, revealed]);

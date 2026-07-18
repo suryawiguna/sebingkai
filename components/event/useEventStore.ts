@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { joinEvent, uploadPhoto } from "@/lib/eventClient";
+import { joinEvent, uploadPhoto, signalNewPhoto } from "@/lib/eventClient";
 
 export type EventInfo = {
   id: string;
@@ -54,12 +54,16 @@ export function useEventStore(event: EventInfo) {
       setError("");
       setPhotos((p) => [...p, dataUrl]);
 
-      // Background upload; roll back on failure.
-      uploadPhoto(event.id, guestId, dataUrl).catch((e) => {
-        countRef.current = Math.max(0, countRef.current - 1);
-        setPhotos((p) => p.filter((u) => u !== dataUrl));
-        setError(e instanceof Error ? e.message : "Gagal mengunggah foto");
-      });
+      // Background upload; roll back on failure. On success, ping album viewers.
+      uploadPhoto(event.id, guestId, dataUrl)
+        .then(() => {
+          void signalNewPhoto(event.id);
+        })
+        .catch((e) => {
+          countRef.current = Math.max(0, countRef.current - 1);
+          setPhotos((p) => p.filter((u) => u !== dataUrl));
+          setError(e instanceof Error ? e.message : "Gagal mengunggah foto");
+        });
       return true;
     },
     [event.id, guestId, limit],

@@ -36,8 +36,18 @@
   Served by public URL (unguessable paths).
 - **`get_event_photos` returns nothing until the event is revealed** — the album
   is sealed at the data layer, not just the UI.
-- **Realtime** publication includes `events` + `photos` so the guest flow and
-  album subscribe to the reveal flip and new photos.
+- **Realtime uses Broadcast, not `postgres_changes`.** Guests are anonymous and
+  have no SELECT policy on `events`/`photos`, and `postgres_changes` is RLS-gated
+  per subscriber — so it would deliver nothing to them. Instead: the host's
+  "reveal now" broadcasts `reveal` on `event-{id}`, and each guest broadcasts
+  `new-photo` on `album-{id}` after a successful upload. Broadcast on public
+  channels is not RLS-gated, so it reaches anon devices. Helpers:
+  `eventTopic`/`albumTopic` + `signalReveal`/`signalNewPhoto` in `lib/eventClient.ts`.
+  (The `alter publication … add table` lines in `0002` are now unused but
+  harmless.)
+- **Scheduled reveal** is driven by a client timer in `EventFlow`; times more
+  than ~24.8 days out (setTimeout's 32-bit limit) are skipped and instead resolve
+  on reload / via `get_event_by_slug` computing `revealed` server-side.
 
 ## Key files
 
@@ -57,8 +67,9 @@
    then run `supabase/migrations/0003_fix_upload_policy.sql` (fixes guest uploads
    being denied — the 0002 upload policy's events subquery ran under anon RLS and
    always failed; 0003 wraps it in a SECURITY DEFINER function).
-2. **Confirm Realtime is on** for the project (Database → Replication /
-   Realtime) — the migration adds `events` + `photos` to the publication.
+2. **Confirm Realtime is enabled** for the project — the guest flow uses public
+   **Broadcast** channels for the reveal flip and new-photo pings (no table
+   publication or RLS policy needed; the `0002` publication lines are unused).
 3. That's it — the bucket is created by the migration (public).
 
 ## How to test the full loop
@@ -75,6 +86,18 @@
 > Note: the dev server can't render in the sandboxed CI here (Google Fonts is
 > unreachable), so this flow must be exercised on a real machine. `npm run
 > build` passes (type-check + prerender).
+
+## Known limitations / deferred
+
+- **Orphaned storage objects.** `uploadPhoto` writes the file *before* `add_photo`;
+  if the RPC rejects (limit reached / event closed) the object is already in the
+  public bucket, and anon has no storage DELETE policy to clean it up. Needs a
+  `SECURITY DEFINER` cleanup RPC or a storage lifecycle rule (also tie this to the
+  public-bucket / PII decision below).
+- **Public bucket = pre-reveal photos are reachable by URL.** The album is sealed
+  at the data layer (`get_event_photos`), but the image *files* are publicly
+  readable the moment they upload, protected only by an unguessable path. For
+  photos of people (PII), consider a private bucket + signed URLs before launch.
 
 ## Deferred to later phases
 

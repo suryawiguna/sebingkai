@@ -8,6 +8,7 @@ import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
 import "yet-another-react-lightbox/styles.css";
 import "yet-another-react-lightbox/plugins/thumbnails.css";
 import { createClient } from "@/lib/supabase/client";
+import { albumTopic } from "@/lib/eventClient";
 import { savePhotos } from "@/lib/save";
 import { Logo } from "../ds/Logo";
 
@@ -46,15 +47,13 @@ export function SharedAlbum({ eventId, eventName }: { eventId: string; eventName
 
   useEffect(() => {
     load();
-    // Live: any new photo for this event re-pulls the album.
+    // Live: guests broadcast on upload; re-pull the album. Broadcast (not
+    // postgres_changes) so anonymous viewers, who lack a photos SELECT policy,
+    // still receive the ping.
     const supabase = createClient();
     const channel = supabase
-      .channel(`album-${eventId}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "photos", filter: `event_id=eq.${eventId}` },
-        () => load(),
-      )
+      .channel(albumTopic(eventId))
+      .on("broadcast", { event: "new-photo" }, () => load())
       .subscribe();
     return () => {
       supabase.removeChannel(channel);

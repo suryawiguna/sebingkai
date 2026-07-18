@@ -73,7 +73,48 @@ export async function uploadPhoto(
     p_token: getGuestToken(),
     p_storage_path: path,
   });
-  if (rpcErr) throw new Error(rpcErr.message);
+  if (rpcErr) {
+    // NOTE: the object was already written to the (public) bucket. anon has no
+    // storage DELETE policy, so we can't clean it up here — the orphan lingers.
+    // Deferred: a SECURITY DEFINER cleanup RPC (or lifecycle rule) should sweep
+    // objects with no matching photos row. Tracked in PHASE-B.md.
+    throw new Error(rpcErr.message);
+  }
 
   return supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+}
+
+// ── Realtime signals ────────────────────────────────────────────────────────
+// Guests are anonymous and have no SELECT policy on events/photos, so Supabase
+// `postgres_changes` (which is RLS-gated per subscriber) would deliver nothing
+// to them. We use public Broadcast channels instead: not RLS-gated, so the
+// reveal flip and new-photo pings actually reach guest devices.
+
+export const eventTopic = (eventId: string) => `event-${eventId}`;
+export const albumTopic = (eventId: string) => `album-${eventId}`;
+
+/** Fire-and-forget: open a channel, send one broadcast on subscribe, tear down. */
+async function signal(topic: string, event: string): Promise<void> {
+  const supabase = createClient();
+  const channel = supabase.channel(topic);
+  await new Promise<void>((resolve) => {
+    channel.subscribe((status) => {
+      if (status === "SUBSCRIBED") {
+        channel.send({ type: "broadcast", event, payload: {} });
+        resolve();
+      }
+    });
+  });
+  // Give the frame a moment to flush before removing the channel.
+  setTimeout(() => supabase.removeChannel(channel), 1500);
+}
+
+/** Guest → album viewers: a new photo landed, re-pull. */
+export function signalNewPhoto(eventId: string): Promise<void> {
+  return signal(albumTopic(eventId), "new-photo");
+}
+
+/** Host → open guests: the album is now revealed. */
+export function signalReveal(eventId: string): Promise<void> {
+  return signal(eventTopic(eventId), "reveal");
 }
