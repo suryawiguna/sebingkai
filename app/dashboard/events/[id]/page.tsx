@@ -4,6 +4,8 @@ import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { EventShare } from "@/components/host/EventShare";
 import { RevealControls } from "@/components/host/RevealControls";
+import { PhotoLimitControl } from "@/components/host/PhotoLimitControl";
+import { EventPhotos } from "@/components/host/EventPhotos";
 
 export const metadata = { title: "Acara", robots: { index: false } };
 
@@ -54,12 +56,14 @@ export default async function EventDetail({
 
         <div className="mt-7 flex flex-col gap-4">
           <EventShare slug={event.slug} />
+          <PhotoLimitControl eventId={event.id} value={event.photo_limit_per_guest} />
           <RevealControls
             eventId={event.id}
             slug={event.slug}
             status={event.status}
             revealAt={event.reveal_at}
           />
+          <EventPhotos eventId={event.id} />
         </div>
       </div>
     </main>

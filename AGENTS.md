@@ -111,12 +111,13 @@ KameraTamu → CaraKerja → Showcase → Pricing → Faq → ClosingCta.
 proxy.ts              Supabase session refresh + /dashboard auth gate (Next 16 "proxy")
 lib/supabase/         browser.ts / server.ts / middleware.ts clients (@supabase/ssr)
 lib/eventClient.ts    guest-side: device token, upload (+thumbnail), RPC calls, Broadcast signals
-supabase/migrations/  0001 schema+RLS · 0002 storage+RPCs+realtime · 0003 upload-policy fix
+supabase/migrations/  0001 schema+RLS · 0002 storage+RPCs+realtime · 0003 upload-policy fix · 0004 host moderation
 app/login/            magic-link + Google login   app/auth/callback/  code exchange
-app/dashboard/        host: list/create events (actions.ts) + events/[id] (QR + reveal)
+app/dashboard/        host: list/create events (actions.ts) + events/[id] (QR + reveal + moderation)
 app/e/[slug]/         REAL guest flow (fetch event → EventFlow)
 components/event/      EventFlow · EventJoin · EventGallery · SharedAlbum · useEventStore
-components/host/        EventShare (QR/link) · RevealControls (schedule / reveal now)
+components/host/        EventShare · RevealControls · CreateEventForm ·
+                       PhotoLimitControl (photos/guest) · EventPhotos (preview + delete)
 ```
 
 Guest ops are anonymous → they never touch tables directly; all go through

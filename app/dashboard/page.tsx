@@ -4,7 +4,8 @@ import { ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Logo } from "@/components/ds/Logo";
 import { Button } from "@/components/ds/Button";
-import { createEvent, signOut } from "./actions";
+import { CreateEventForm } from "@/components/host/CreateEventForm";
+import { signOut } from "./actions";
 
 export const metadata = { title: "Dashboard", robots: { index: false } };
 
@@ -47,35 +48,9 @@ export default async function Dashboard() {
         </h1>
 
         {/* Create event */}
-        <form
-          action={createEvent}
-          className="mt-6 rounded-md border border-border bg-surface p-5"
-        >
-          <p className="mb-3.5 font-display text-[17px] font-semibold text-ink">
-            Buat acara baru
-          </p>
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <input
-              name="name"
-              required
-              placeholder="Nama acara — mis. Pernikahan Sarah & Adi"
-              className="h-[46px] flex-1 rounded-sm border border-border bg-base px-4 font-body text-[15px] text-ink outline-none placeholder:text-muted focus:border-accent"
-            />
-            <select
-              name="tier"
-              defaultValue="coba"
-              className="h-[46px] rounded-sm border border-border bg-base px-3 font-body text-[15px] text-ink outline-none focus:border-accent"
-            >
-              <option value="coba">Coba — 5 tamu</option>
-              <option value="kecil">Kecil — 30 tamu</option>
-              <option value="standar">Standar — 100 tamu</option>
-              <option value="besar">Besar — tak terbatas</option>
-            </select>
-            <Button type="submit" variant="primary" size="md">
-              Buat
-            </Button>
-          </div>
-        </form>
+        <div className="mt-6">
+          <CreateEventForm />
+        </div>
 
         {/* Event list */}
         <div className="mt-6 flex flex-col gap-2.5">
